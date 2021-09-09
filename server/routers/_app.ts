@@ -2,6 +2,7 @@
  * This file contains the root router of your tRPC-backend
  */
 import { createRouter } from "../createRouter";
+import { bookingRouter } from "./booking";
 import { testRouter } from "./test";
 
 /**
@@ -21,6 +22,7 @@ export const appRouter = createRouter()
    * @link https://trpc.io/docs/error-formatting
    */
   // .formatError(({ shape, error }) => { })
-  .merge("test.", testRouter);
+  .merge("test.", testRouter)
+  .merge("booking.", bookingRouter);
 
 export type AppRouter = typeof appRouter;
