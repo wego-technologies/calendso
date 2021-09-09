@@ -105,7 +105,8 @@ export const getStaticPaths: GetStaticPaths = async () => {
       params: { user },
     })),
 
-    fallback: true,
+    // https://nextjs.org/docs/basic-features/data-fetching#fallback-blocking
+    fallback: "blocking",
   };
 };
 
