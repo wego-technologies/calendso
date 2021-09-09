@@ -1,6 +1,5 @@
-import { createRouter } from "../createRouter";
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
+import { createRouter } from "../createRouter";
 
 export const bookingRouter = createRouter().query("userAndEventType", {
   input: z.string(),
