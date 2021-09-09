@@ -92,9 +92,7 @@ export default function User(props: InferGetStaticPropsType<typeof getStaticProp
   );
 }
 export const getStaticPaths: GetStaticPaths = async () => {
-  const prisma = new PrismaClient({
-    log: ["query", "error", "warn"],
-  });
+  const prisma = new PrismaClient();
   const allUsers = await prisma.user.findMany({
     select: {
       username: true,
