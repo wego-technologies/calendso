@@ -15,6 +15,7 @@ export default function User(props: InferGetStaticPropsType<typeof getStaticProp
 
   const { isReady } = Theme(query.data?.user?.theme);
   if (!query.data) {
+    // this only happens in development as it's prefetched and hydrated in `getStaticProps`
     return "...";
   }
   const { user, eventTypes } = query.data;
