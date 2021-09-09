@@ -1,9 +1,9 @@
+import { PrismaClient } from "@prisma/client";
 import Avatar from "@components/Avatar";
 import { HeadSeo } from "@components/seo/head-seo";
 import Theme from "@components/Theme";
 import { ArrowRightIcon } from "@heroicons/react/outline";
 import { ClockIcon, InformationCircleIcon, UserIcon } from "@heroicons/react/solid";
-import prisma from "@lib/prisma";
 import { trpc } from "@lib/trpc";
 import { ssg } from "@server/ssg";
 import { GetStaticPaths, GetStaticPropsContext, InferGetStaticPropsType } from "next";
@@ -92,6 +92,9 @@ export default function User(props: InferGetStaticPropsType<typeof getStaticProp
   );
 }
 export const getStaticPaths: GetStaticPaths = async () => {
+  const prisma = new PrismaClient({
+    log: ["query", "error", "warn"],
+  });
   const allUsers = await prisma.user.findMany({
     select: {
       username: true,
