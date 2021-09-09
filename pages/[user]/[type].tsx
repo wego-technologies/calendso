@@ -7,27 +7,37 @@ import { HeadSeo } from "@components/seo/head-seo";
 import Theme from "@components/Theme";
 import PoweredByCalendso from "@components/ui/PoweredByCalendso";
 import { ChevronDownIcon, ChevronUpIcon, ClockIcon, GlobeIcon } from "@heroicons/react/solid";
-import { asStringOrNull } from "@lib/asStringOrNull";
 import { timeZone } from "@lib/clock";
-import prisma from "@lib/prisma";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@lib/telemetry";
+import { trpc } from "@lib/trpc";
 import { inferSSRProps } from "@lib/types/inferSSRProps";
-import { Availability } from "@prisma/client";
 import * as Collapsible from "@radix-ui/react-collapsible";
+import { ssg } from "@server/ssg";
 import dayjs, { Dayjs } from "dayjs";
-import { GetServerSidePropsContext } from "next";
+import { GetStaticPaths, GetStaticPropsContext } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-export default function Type(props: inferSSRProps<typeof getServerSideProps>) {
+export default function Type(props: inferSSRProps<typeof getStaticProps>) {
   // Get router variables
   const router = useRouter();
   const { rescheduleUid } = router.query;
+  const dateParam = router.query.date as string | undefined;
+  const typeParam = props.type ?? (router.query.type as string);
+  const userParam = props.user ?? (router.query.user as string);
 
-  const { isReady } = Theme(props.user.theme);
+  const query = trpc.useQuery([
+    "booking.eventByUserAndType",
+    {
+      type: typeParam,
+      user: userParam,
+    },
+  ]);
+
+  const { isReady } = Theme(query.data?.user.theme);
 
   const [selectedDate, setSelectedDate] = useState<Dayjs>(() => {
-    return props.date && dayjs(props.date).isValid() ? dayjs(props.date) : null;
+    return dateParam && dayjs(dateParam).isValid() ? dayjs(dateParam) : null;
   });
   const [isTimeOptionsOpen, setIsTimeOptionsOpen] = useState(false);
   const [timeFormat, setTimeFormat] = useState("h:mma");
@@ -81,15 +91,18 @@ export default function Type(props: inferSSRProps<typeof getServerSideProps>) {
     setTimeFormat(is24hClock ? "HH:mm" : "h:mma");
   };
 
+  if (!query.data) {
+    return "...";
+  }
+  const { eventType, user, workingHours } = query.data;
+
   return (
     <>
       <HeadSeo
-        title={`${rescheduleUid ? "Reschedule" : ""} ${props.eventType.title} | ${
-          props.user.name || props.user.username
-        }`}
-        description={`${rescheduleUid ? "Reschedule" : ""} ${props.eventType.title}`}
-        name={props.user.name || props.user.username}
-        avatar={props.user.avatar}
+        title={`${rescheduleUid ? "Reschedule" : ""} ${eventType.title} | ${user.name || user.username}`}
+        description={`${rescheduleUid ? "Reschedule" : ""} ${eventType.title}`}
+        name={user.name || user.username}
+        avatar={user.avatar}
       />
       {isReady && (
         <div>
@@ -103,22 +116,22 @@ export default function Type(props: inferSSRProps<typeof getServerSideProps>) {
               <div className="block p-4 sm:p-8 md:hidden">
                 <div className="flex items-center">
                   <Avatar
-                    imageSrc={props.user.avatar}
-                    displayName={props.user.name}
+                    imageSrc={user.avatar}
+                    displayName={user.name}
                     className="inline-block rounded-full h-9 w-9"
                   />
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-black dark:text-gray-300">{props.user.name}</p>
+                    <p className="text-sm font-medium text-black dark:text-gray-300">{user.name}</p>
                     <div className="flex gap-2 text-xs font-medium text-gray-600">
-                      {props.eventType.title}
+                      {eventType.title}
                       <div>
                         <ClockIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
-                        {props.eventType.length} minutes
+                        {eventType.length} minutes
                       </div>
                     </div>
                   </div>
                 </div>
-                <p className="mt-3 text-gray-600 dark:text-gray-200">{props.eventType.description}</p>
+                <p className="mt-3 text-gray-600 dark:text-gray-200">{eventType.description}</p>
               </div>
 
               <div className="px-4 sm:flex sm:py-5 sm:p-4">
@@ -128,37 +141,37 @@ export default function Type(props: inferSSRProps<typeof getServerSideProps>) {
                     (selectedDate ? "sm:w-1/3" : "sm:w-1/2")
                   }>
                   <Avatar
-                    imageSrc={props.user.avatar}
-                    displayName={props.user.name}
+                    imageSrc={user.avatar}
+                    displayName={user.name}
                     className="w-16 h-16 mb-4 rounded-full"
                   />
-                  <h2 className="font-medium text-gray-500 dark:text-gray-300">{props.user.name}</h2>
+                  <h2 className="font-medium text-gray-500 dark:text-gray-300">{user.name}</h2>
                   <h1 className="mb-4 text-3xl font-semibold text-gray-800 dark:text-white">
-                    {props.eventType.title}
+                    {eventType.title}
                   </h1>
                   <p className="px-2 py-1 mb-1 -ml-2 text-gray-500">
                     <ClockIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
-                    {props.eventType.length} minutes
+                    {eventType.length} minutes
                   </p>
 
                   <TimezoneDropdown />
 
-                  <p className="mt-3 mb-8 text-gray-600 dark:text-gray-200">{props.eventType.description}</p>
+                  <p className="mt-3 mb-8 text-gray-600 dark:text-gray-200">{eventType.description}</p>
                 </div>
                 <DatePicker
                   date={selectedDate}
-                  periodType={props.eventType?.periodType}
-                  periodStartDate={props.eventType?.periodStartDate}
-                  periodEndDate={props.eventType?.periodEndDate}
-                  periodDays={props.eventType?.periodDays}
-                  periodCountCalendarDays={props.eventType?.periodCountCalendarDays}
-                  weekStart={props.user.weekStart}
+                  periodType={eventType?.periodType}
+                  periodStartDate={eventType?.periodStartDate}
+                  periodEndDate={eventType?.periodEndDate}
+                  periodDays={eventType?.periodDays}
+                  periodCountCalendarDays={eventType?.periodCountCalendarDays}
+                  weekStart={user.weekStart}
                   onDatePicked={changeDate}
-                  workingHours={props.workingHours}
-                  organizerTimeZone={props.eventType.timeZone || props.user.timeZone}
+                  workingHours={workingHours}
+                  organizerTimeZone={eventType.timeZone || user.timeZone}
                   inviteeTimeZone={timeZone()}
-                  eventLength={props.eventType.length}
-                  minimumBookingNotice={props.eventType.minimumBookingNotice}
+                  eventLength={eventType.length}
+                  minimumBookingNotice={eventType.minimumBookingNotice}
                 />
 
                 <div className="block mt-4 ml-1 sm:hidden">
@@ -167,19 +180,19 @@ export default function Type(props: inferSSRProps<typeof getServerSideProps>) {
 
                 {selectedDate && (
                   <AvailableTimes
-                    workingHours={props.workingHours}
+                    workingHours={workingHours}
                     timeFormat={timeFormat}
-                    organizerTimeZone={props.eventType.timeZone || props.user.timeZone}
-                    minimumBookingNotice={props.eventType.minimumBookingNotice}
-                    eventTypeId={props.eventType.id}
-                    eventLength={props.eventType.length}
+                    organizerTimeZone={eventType.timeZone || user.timeZone}
+                    minimumBookingNotice={eventType.minimumBookingNotice}
+                    eventTypeId={eventType.id}
+                    eventLength={eventType.length}
                     date={selectedDate}
-                    user={props.user}
+                    user={user}
                   />
                 )}
               </div>
             </div>
-            {!props.user.hideBranding && <PoweredByCalendso />}
+            {!user.hideBranding && <PoweredByCalendso />}
           </main>
         </div>
       )}
@@ -206,119 +219,35 @@ export default function Type(props: inferSSRProps<typeof getServerSideProps>) {
   }
 }
 
-export const getServerSideProps = async (context: GetServerSidePropsContext) => {
-  // get query params and typecast them to string
-  // (would be even better to assert them instead of typecasting)
-  const userParam = asStringOrNull(context.query.user);
-  const typeParam = asStringOrNull(context.query.type);
-  const dateParam = asStringOrNull(context.query.date);
-
-  if (!userParam || !typeParam) {
-    throw new Error(`File is not named [type]/[user]`);
-  }
-
-  const user = await prisma.user.findFirst({
-    where: {
-      username: userParam.toLowerCase(),
-    },
-    select: {
-      id: true,
-      username: true,
-      name: true,
-      email: true,
-      bio: true,
-      avatar: true,
-      startTime: true,
-      endTime: true,
-      timeZone: true,
-      weekStart: true,
-      availability: true,
-      hideBranding: true,
-      theme: true,
-      plan: true,
-    },
-  });
-
-  if (!user) {
-    return {
-      notFound: true,
-    };
-  }
-  const eventType = await prisma.eventType.findUnique({
-    where: {
-      userId_slug: {
-        userId: user.id,
-        slug: typeParam,
-      },
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      length: true,
-      availability: true,
-      timeZone: true,
-      periodType: true,
-      periodDays: true,
-      periodStartDate: true,
-      periodEndDate: true,
-      periodCountCalendarDays: true,
-      minimumBookingNotice: true,
-      hidden: true,
-    },
-  });
-
-  if (!eventType || eventType.hidden) {
-    return {
-      notFound: true,
-    };
-  }
-
-  // check this is the first event
-  if (user.plan === "FREE") {
-    const firstEventType = await prisma.eventType.findFirst({
-      where: {
-        userId: user.id,
-      },
-      select: {
-        id: true,
-      },
-    });
-    if (firstEventType?.id !== eventType.id) {
-      return {
-        notFound: true,
-      } as const;
-    }
-  }
-  const getWorkingHours = (providesAvailability: { availability: Availability[] }) =>
-    providesAvailability.availability && providesAvailability.availability.length
-      ? providesAvailability.availability
-      : null;
-
-  const workingHours =
-    getWorkingHours(eventType) ||
-    getWorkingHours(user) ||
-    [
-      {
-        days: [0, 1, 2, 3, 4, 5, 6],
-        startTime: user.startTime,
-        endTime: user.endTime,
-      },
-    ].filter((availability): boolean => typeof availability["days"] !== "undefined");
-
-  workingHours.sort((a, b) => a.startTime - b.startTime);
-
-  const eventTypeObject = Object.assign({}, eventType, {
-    periodStartDate: eventType.periodStartDate?.toString() ?? null,
-    periodEndDate: eventType.periodEndDate?.toString() ?? null,
-  });
-
+export const getStaticPaths: GetStaticPaths = async () => {
   return {
-    props: {
-      user,
-      date: dateParam,
-      eventType: eventTypeObject,
-      workingHours,
-    },
+    paths: [],
+    fallback: true,
   };
 };
+
+export const getStaticProps = async (context: GetStaticPropsContext<{ user: string; type: string }>) => {
+  const data = await ssg.fetchQuery("booking.eventByUserAndType", context.params!);
+  if (!data) {
+    return {
+      notFound: true,
+    } as const;
+  }
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+      user: context.params?.user,
+      type: context.params?.type,
+    },
+    revalidate: 1,
+  };
+};
+
+// Auxiliary methods
+export function getRandomColorCode(): string {
+  let color = "#";
+  for (let idx = 0; idx < 6; idx++) {
+    color += Math.floor(Math.random() * 10);
+  }
+  return color;
+}

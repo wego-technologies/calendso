@@ -1,21 +1,34 @@
-import { PrismaClient } from "@prisma/client";
 import Avatar from "@components/Avatar";
 import { HeadSeo } from "@components/seo/head-seo";
 import Theme from "@components/Theme";
 import { ArrowRightIcon } from "@heroicons/react/outline";
 import { ClockIcon, InformationCircleIcon, UserIcon } from "@heroicons/react/solid";
+import prisma from "@lib/prisma";
 import { trpc } from "@lib/trpc";
+import { inferSSRProps } from "@lib/types/inferSSRProps";
 import { ssg } from "@server/ssg";
-import { GetStaticPaths, GetStaticPropsContext, InferGetStaticPropsType } from "next";
+import { GetStaticPaths, GetStaticPropsContext } from "next";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect } from "react";
 
-export default function User(props: InferGetStaticPropsType<typeof getStaticProps>) {
-  const query = trpc.useQuery(["booking.userAndEventType", props.user]);
-
+export default function User(props: inferSSRProps<typeof getStaticProps>) {
+  const query = trpc.useQuery(["booking.userAndEventTypes", props.user]);
+  const utils = trpc.useContext();
   const { isReady } = Theme(query.data?.user?.theme);
+  // prefetch all event types
+  useEffect(() => {
+    if (!query.data) {
+      return;
+    }
+    query.data.eventTypes.forEach(({ slug }) => {
+      utils.prefetchQuery(["booking.eventByUserAndType", { user: props.user, type: slug }]);
+    });
+  }, [props.user, query.data, utils]);
   if (!query.data) {
-    // this only happens in development as it's prefetched and hydrated in `getStaticProps`
+    // this only happens
+    // - in development
+    // - first request to a new user
+    // - 404 pages
     return "...";
   }
   const { user, eventTypes } = query.data;
@@ -93,7 +106,6 @@ export default function User(props: InferGetStaticPropsType<typeof getStaticProp
   );
 }
 export const getStaticPaths: GetStaticPaths = async () => {
-  const prisma = new PrismaClient();
   const allUsers = await prisma.user.findMany({
     select: {
       username: true,
@@ -111,7 +123,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 export const getStaticProps = async (context: GetStaticPropsContext<{ user: string }>) => {
-  const data = await ssg.fetchQuery("booking.userAndEventType", context.params!.user);
+  const data = await ssg.fetchQuery("booking.userAndEventTypes", context.params!.user);
   if (!data) {
     return {
       notFound: true,
