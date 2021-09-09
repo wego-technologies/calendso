@@ -21,7 +21,7 @@ export const bookingRouter = createRouter().query("userAndEventType", {
       },
     });
     if (!user) {
-      throw new TRPCError({ code: "NOT_FOUND" });
+      return null;
     }
 
     const eventTypesWithHidden = await ctx.prisma.eventType.findMany({
