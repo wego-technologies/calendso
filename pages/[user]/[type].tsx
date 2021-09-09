@@ -23,16 +23,21 @@ export default function Type(props: inferSSRProps<typeof getStaticProps>) {
   const router = useRouter();
   const { rescheduleUid } = router.query;
   const dateParam = router.query.date as string | undefined;
-  const typeParam = props.type ?? (router.query.type as string);
-  const userParam = props.user ?? (router.query.user as string);
+  const typeParam = props.type ?? (router.query.type as string | undefined);
+  const userParam = props.user ?? (router.query.user as string | undefined);
 
-  const query = trpc.useQuery([
-    "booking.eventByUserAndType",
+  const query = trpc.useQuery(
+    [
+      "booking.eventByUserAndType",
+      {
+        type: typeParam!,
+        user: userParam!,
+      },
+    ],
     {
-      type: typeParam,
-      user: userParam,
-    },
-  ]);
+      enabled: !!typeParam && !!userParam,
+    }
+  );
 
   const { isReady } = Theme(query.data?.user.theme);
 
@@ -110,7 +115,8 @@ export default function Type(props: inferSSRProps<typeof getStaticProps>) {
             className={
               "mx-auto my-0 md:my-24 transition-max-width ease-in-out duration-500 " +
               (selectedDate ? "max-w-5xl" : "max-w-3xl")
-            }>
+            }
+            data-testid="booking-loaded">
             <div className="bg-white border-gray-200 rounded-sm sm:dark:border-gray-600 dark:bg-gray-900 md:border">
               {/* mobile: details */}
               <div className="block p-4 sm:p-8 md:hidden">
