@@ -109,6 +109,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 export const getStaticProps = async (context: GetStaticPropsContext<{ user: string }>) => {
+  await ssg.fetchQuery("booking.userAndEventType", context.params!.user);
   return {
     props: {
       trpcState: ssg.dehydrate(),
