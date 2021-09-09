@@ -1,5 +1,5 @@
 /**
- * This file contains the root router of your tRPC-backend
+ * This file contains the root router of the tRPC-backend
  */
 import { createRouter } from "../createRouter";
 import { bookingRouter } from "./booking";
