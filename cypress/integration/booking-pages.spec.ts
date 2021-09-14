@@ -9,14 +9,23 @@ describe("booking pages", () => {
     });
 
     it("/free/30min is bookable", () => {
-      cy.visit("/free/30min");
-      cy.get("[data-testid=booking-loaded]").should("exist");
+      cy.request({
+        method: "GET",
+        url: "/free/30min",
+        failOnStatusCode: false,
+      }).then((res) => {
+        expect(res.status).to.eql(200);
+      });
     });
 
     it("/free/60min is not bookable", () => {
-      cy.visit("/free/60min");
-      cy.get("[data-testid=booking-loaded]").should("not.exist");
-      cy.contains("This page does not exist");
+      cy.request({
+        method: "GET",
+        url: "/free/60min",
+        failOnStatusCode: false,
+      }).then((res) => {
+        expect(res.status).to.eql(404);
+      });
     });
   });
   it("pro user's page has at least 2 visibile events", () => {
@@ -30,16 +39,24 @@ describe("booking pages", () => {
       cy.contains("This user hasn't set up any event types yet.");
     });
 
-    it("/free-first-hidden/30min is not bookable", () => {
-      cy.visit("/free-first-hidden/30min");
-      cy.get("[data-testid=booking-loaded]").should("not.exist");
-      cy.contains("This page does not exist");
+    it("/free-first-hidden/30min is bookable", () => {
+      cy.request({
+        method: "GET",
+        url: "/free-first-hidden/30min",
+        failOnStatusCode: false,
+      }).then((res) => {
+        expect(res.status).to.eql(200);
+      });
     });
 
     it("/free-first-hidden/60min is not bookable", () => {
-      cy.visit("/free-first-hidden/60min");
-      cy.get("[data-testid=booking-loaded]").should("not.exist");
-      cy.contains("This page does not exist");
+      cy.request({
+        method: "GET",
+        url: "/free-first-hidden/60min",
+        failOnStatusCode: false,
+      }).then((res) => {
+        expect(res.status).to.eql(404);
+      });
     });
   });
 });

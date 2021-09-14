@@ -1,35 +1,34 @@
-import Avatar from "@components/Avatar";
+import Avatar from "@components/ui/Avatar";
 import { HeadSeo } from "@components/seo/head-seo";
-import Theme from "@components/Theme";
+import useTheme from "@lib/hooks/useTheme";
 import { ArrowRightIcon } from "@heroicons/react/outline";
-import { ClockIcon, InformationCircleIcon, UserIcon } from "@heroicons/react/solid";
 import prisma from "@lib/prisma";
 import { trpc } from "@lib/trpc";
 import { inferSSRProps } from "@lib/types/inferSSRProps";
-import { ssg } from "@server/ssg";
 import { GetStaticPaths, GetStaticPropsContext } from "next";
 import Link from "next/link";
-import React, { useEffect } from "react";
+import React from "react";
+import EventTypeDescription from "@components/eventtype/EventTypeDescription";
+import { ssg } from "@server/ssg";
 
 export default function User(props: inferSSRProps<typeof getStaticProps>) {
-  const query = trpc.useQuery(["booking.userAndEventTypes", props.user]);
-  const utils = trpc.useContext();
-  const { isReady } = Theme(query.data?.user?.theme);
+  const query = trpc.useQuery(["booking.userAndEventTypes", props.username]); // this will be set b/c of `getStaticProps`
+
+  const { isReady } = useTheme(query.data?.user?.theme);
+
+  // const utils = trpc.useContext();
   // prefetch all event types
-  useEffect(() => {
-    if (!query.data) {
-      return;
-    }
-    query.data.eventTypes.forEach(({ slug }) => {
-      utils.prefetchQuery(["booking.eventByUserAndType", { user: props.user, type: slug }]);
-    });
-  }, [props.user, query.data, utils]);
+  // useEffect(() => {
+  //   if (!query.data) {
+  //     return;
+  //   }
+  //   query.data.eventTypes.forEach(({ slug }) => {
+  //     utils.prefetchQuery(["booking.eventByUserAndType", { user: props.username, type: slug }]);
+  //   });
+  // }, [props.username, query.data, utils]);
   if (!query.data) {
-    // this only happens
-    // - in development
-    // - first request to a new user
-    // - 404 pages
-    return "...";
+    // this shold never happen as we do `blocking: true`
+    return <>...</>;
   }
   const { user, eventTypes } = query.data;
   return (
@@ -63,29 +62,7 @@ export default function User(props: inferSSRProps<typeof getStaticProps>) {
                   <Link href={`/${user.username}/${type.slug}`}>
                     <a className="block px-6 py-4">
                       <h2 className="font-semibold text-neutral-900 dark:text-white">{type.title}</h2>
-                      <div className="mt-2 flex space-x-4">
-                        <div className="flex text-sm text-neutral-500">
-                          <ClockIcon
-                            className="flex-shrink-0 mt-0.5 mr-1.5 h-4 w-4 text-neutral-400 dark:text-white"
-                            aria-hidden="true"
-                          />
-                          <p className="dark:text-white">{type.length}m</p>
-                        </div>
-                        <div className="flex text-sm min-w-16 text-neutral-500">
-                          <UserIcon
-                            className="flex-shrink-0 mt-0.5 mr-1.5 h-4 w-4 text-neutral-400 dark:text-white"
-                            aria-hidden="true"
-                          />
-                          <p className="dark:text-white">1-on-1</p>
-                        </div>
-                        <div className="flex text-sm text-neutral-500">
-                          <InformationCircleIcon
-                            className="flex-shrink-0 mt-0.5 mr-1.5 h-4 w-4 text-neutral-400 dark:text-white"
-                            aria-hidden="true"
-                          />
-                          <p className="dark:text-white">{type.description}</p>
-                        </div>
-                      </div>
+                      <EventTypeDescription eventType={type} />
                     </a>
                   </Link>
                 </div>
@@ -105,6 +82,7 @@ export default function User(props: inferSSRProps<typeof getStaticProps>) {
     </>
   );
 }
+
 export const getStaticPaths: GetStaticPaths = async () => {
   const allUsers = await prisma.user.findMany({
     select: {
@@ -124,6 +102,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 export const getStaticProps = async (context: GetStaticPropsContext<{ user: string }>) => {
   const data = await ssg.fetchQuery("booking.userAndEventTypes", context.params!.user);
+
   if (!data) {
     return {
       notFound: true,
@@ -132,17 +111,8 @@ export const getStaticProps = async (context: GetStaticPropsContext<{ user: stri
   return {
     props: {
       trpcState: ssg.dehydrate(),
-      user: context.params!.user,
+      username: context.params!.user,
     },
     revalidate: 1,
   };
 };
-
-// Auxiliary methods
-export function getRandomColorCode(): string {
-  let color = "#";
-  for (let idx = 0; idx < 6; idx++) {
-    color += Math.floor(Math.random() * 10);
-  }
-  return color;
-}
