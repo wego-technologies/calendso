@@ -106,7 +106,7 @@ export const getStaticProps = async (context: GetStaticPropsContext<{ user: stri
   if (!data) {
     return {
       notFound: true,
-    } as const;
+    };
   }
   return {
     props: {

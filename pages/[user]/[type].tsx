@@ -140,7 +140,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
     if (firstEventType?.id !== eventType.id) {
       return {
         notFound: true,
-      } as const;
+      };
     }
   }
   const getWorkingHours = (providesAvailability: { availability: Availability[] }) =>
