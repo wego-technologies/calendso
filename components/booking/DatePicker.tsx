@@ -183,7 +183,7 @@ const DatePicker = ({
                   date && date.isSame(inviteeDate().date(day.date), "day")
                     ? "bg-blue-600 text-white-important"
                     : !day.disabled
-                    ? " bg-gray-100 dark:bg-gray-600"
+                    ? ""
                     : ""
                 )}>
                 {day.date}
