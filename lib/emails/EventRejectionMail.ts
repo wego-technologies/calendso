@@ -53,7 +53,7 @@ export default class EventRejectionMail extends EventMail {
       `
   </div>
   <div style="text-align: center; margin-top: 20px; color: #ccc; font-size: 12px;">
-    <img style="opacity: 0.25; width: 120px;" src="https://gatego.io/Gatego%20Logo%2032px%20opti.svg" alt="Gatego Logo"></div>
+    <img style="width: 120px;" src="https://gatego.io/Gatego%20Logo.png" alt="Gatego Logo"></div>
 </body>
   `
     );
