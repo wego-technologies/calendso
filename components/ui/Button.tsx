@@ -59,12 +59,12 @@ export const Button = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonPr
         // different styles depending on color
         color === "primary" &&
           (disabled
-            ? "border border-transparent bg-gray-400 text-white"
-            : "border border-transparent text-white bg-neutral-900 hover:bg-neutral-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-neutral-900"),
+            ? "border border-transparent bg-blue-600 text-white"
+            : "border border-transparent text-white bg-blue-100 hover:bg-neutral-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-neutral-900"),
         color === "secondary" &&
           (disabled
-            ? "border border-gray-200 text-gray-400 bg-white"
-            : "border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-neutral-900 dark:bg-transparent dark:text-white dark:border-gray-800 dark:hover:bg-gray-900"),
+            ? "border border-blue-600 text-gray-400 bg-white"
+            : "border border-blue-600 text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-neutral-900 dark:bg-transparent dark:text-white dark:border-gray-800 dark:hover:bg-gray-900"),
         color === "minimal" &&
           (disabled
             ? "text-gray-400 bg-transparent"
