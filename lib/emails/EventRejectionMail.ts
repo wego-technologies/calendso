@@ -47,12 +47,13 @@ export default class EventRejectionMail extends EventMail {
     </svg>
     <h1 style="font-weight: 500; color: #161e2e;">Your meeting request has been rejected</h1>
     <p style="color: #4b5563; margin-bottom: 30px;">You and any other attendees have been emailed with this information.</p>
+    <p style="color: #4b5563; margin-bottom: 30px;">We are sorry for the inconvenience, please feel free to reschedule.</p>
     <hr />
     ` +
       `
   </div>
   <div style="text-align: center; margin-top: 20px; color: #ccc; font-size: 12px;">
-    <img style="opacity: 0.25; width: 120px;" src="https://app.cal.com/cal-logo-word.svg" alt="Calendso Logo"></div>
+    <img style="opacity: 0.25; width: 120px;" src="https://gatego.io/Gatego%20Logo%2032px%20opti.svg" alt="Gatego Logo"></div>
 </body>
   `
     );
