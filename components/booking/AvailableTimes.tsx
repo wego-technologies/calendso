@@ -59,7 +59,7 @@ const AvailableTimes = ({
           return (
             <div key={slot.time.format()}>
               <Link href={bookingUrl}>
-                <a className="block py-4 mb-4 font-medium bg-white border border-blue-600 rounded-lg dark:bg-gray-600 text-primary-500 dark:text-neutral-200 dark:border-transparent hover:text-white hover:bg-blue-600 dark:hover:border-black dark:hover:bg-black">
+                <a className="block py-4 mb-4 font-medium bg-white border-4 border-blue-600 rounded-lg dark:bg-gray-600 text-primary-500 dark:text-neutral-200 dark:border-transparent hover:text-white hover:bg-blue-600 dark:hover:border-black dark:hover:bg-black">
                   {slot.time.format(timeFormat)}
                 </a>
               </Link>
