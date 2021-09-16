@@ -154,7 +154,7 @@ const BookingPage = (props: any): JSX.Element => {
         </Head>
 
         <main className="max-w-3xl mx-auto my-0 sm:my-24">
-          <div className="overflow-hidden bg-white border border-gray-200 dark:bg-neutral-900 dark:border-0 sm:rounded-sm">
+          <div className="overflow-hidden bg-white border border-gray-200 dark:bg-neutral-900 dark:border-0 sm:rounded-lg">
             <div className="px-4 py-5 sm:flex sm:p-4">
               <div className="sm:w-1/2 sm:border-r sm:dark:border-black">
                 <AvatarGroup

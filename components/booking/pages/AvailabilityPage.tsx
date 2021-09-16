@@ -103,7 +103,7 @@ const AvailabilityPage = ({ profile, eventType, workingHours }: AvailabilityPage
               "mx-auto my-0 md:my-24 transition-max-width ease-in-out duration-500 " +
               (selectedDate ? "max-w-5xl" : "max-w-3xl")
             }>
-            <div className="bg-white border-gray-200 rounded-sm sm:dark:border-gray-600 dark:bg-gray-900 md:border">
+            <div className="bg-white border-gray-200 rounded-lg sm:dark:border-gray-600 dark:bg-gray-900 md:border">
               {/* mobile: details */}
               <div className="block p-4 sm:p-8 md:hidden">
                 <div className="flex items-center">
@@ -151,7 +151,7 @@ const AvailabilityPage = ({ profile, eventType, workingHours }: AvailabilityPage
                     size={10}
                     truncateAfter={3}
                   />
-                  <h2 className="font-medium text-gray-500 dark:text-gray-300 mt-3">{profile.name}</h2>
+                  <h2 className="mt-3 font-medium text-gray-500 dark:text-gray-300">{profile.name}</h2>
                   <h1 className="mb-4 text-3xl font-semibold text-gray-800 dark:text-white">
                     {eventType.title}
                   </h1>
