@@ -134,7 +134,7 @@
 }
 
 .react-multi-email > [type='text'] {
-  @apply shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-black block w-full sm:text-sm border-gray-300 rounded-md;
+  @apply shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-black block w-full sm:text-sm border-gray-300 rounded-md;
 }
 
 .react-multi-email {
