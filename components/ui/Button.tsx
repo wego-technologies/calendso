@@ -49,9 +49,9 @@ export const Button = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonPr
         // base styles independent what type of button it is
         "inline-flex items-center",
         // different styles depending on size
-        size === "sm" && "px-3 py-2 text-sm leading-4 font-medium rounded-sm",
-        size === "base" && "px-3 py-2 text-sm font-medium rounded-sm",
-        size === "lg" && "px-4 py-2 text-base font-medium rounded-sm",
+        size === "sm" && "px-3 py-2 text-sm leading-4 font-medium rounded-lg",
+        size === "base" && "px-3 py-2 text-sm font-medium rounded-lg",
+        size === "lg" && "px-4 py-2 text-base font-medium rounded-lg",
         // turn button into a floating action button (fab)
         size === "fab" ? "fixed" : "relative",
         size === "fab" && "justify-center bottom-20 right-8 rounded-full p-4 w-14 h-14",
@@ -64,7 +64,7 @@ export const Button = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonPr
         color === "secondary" &&
           (disabled
             ? "border border-blue-600 text-gray-400 bg-white"
-            : "border border-blue-600 text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-neutral-900 dark:bg-transparent dark:text-white dark:border-gray-800 dark:hover:bg-gray-900"),
+            : "border border-blue-600 text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-600 dark:bg-transparent dark:text-white dark:border-gray-800 dark:hover:bg-gray-900"),
         color === "minimal" &&
           (disabled
             ? "text-gray-400 bg-transparent"
