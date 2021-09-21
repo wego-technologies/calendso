@@ -93,7 +93,7 @@ export default class EventAttendeeMail extends EventMail {
   </div>
   <div style="text-align: center; margin-top: 20px; color: #ccc; font-size: 12px;">
     <img style="width: 120px;" src="https://gatego.io/Gatego%20Logo.png" alt="Gatego Logo"></div>
-</body>
+  </body>
   `
     );
   }
