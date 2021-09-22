@@ -133,8 +133,6 @@
   }
 }
 
-.react-multi-email > [type='text'] {
-  @apply block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-black sm:text-sm;
 /* hide intercom chat bubble on mobile */
 @media only screen and (max-width: 768px) {
     .intercom-launcher-frame{
@@ -156,10 +154,10 @@
     }
 }
 
-
-.react-multi-email > [type='text'] {
-    @apply block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-900 focus:ring-black focus:border-black sm:text-sm;
+.react-multi-email > [type="text"] {
+  @apply block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-black sm:text-sm;
 }
+
 
 .react-multi-email [data-tag] {
   box-shadow: none !important;
