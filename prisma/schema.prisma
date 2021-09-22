@@ -1,18 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-enum SchedulingType {
-  ROUND_ROBIN @map("roundRobin")
-  COLLECTIVE  @map("collective")
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model EventType {
@@ -23,16 +15,11 @@ model EventType {
   locations               Json?
   length                  Int
   hidden                  Boolean                @default(false)
-  users                   User[]                 @relation("user_eventtype")
   userId                  Int?
-  team                    Team?                  @relation(fields: [teamId], references: [id])
   teamId                  Int?
-  bookings                Booking[]
-  availability            Availability[]
   eventName               String?
-  customInputs            EventTypeCustomInput[]
   timeZone                String?
-  periodType              String?                @default("unlimited") // unlimited | rolling | range
+  periodType              String?                @default("unlimited")
   periodStartDate         DateTime?
   periodEndDate           DateTime?
   periodDays              Int?
@@ -40,21 +27,20 @@ model EventType {
   requiresConfirmation    Boolean                @default(false)
   minimumBookingNotice    Int                    @default(120)
   schedulingType          SchedulingType?
+  team                    Team?                  @relation(fields: [teamId], references: [id])
+  availability            Availability[]
+  bookings                Booking[]
+  customInputs            EventTypeCustomInput[]
   Schedule                Schedule[]
+  users                   User[]                 @relation("user_eventtype")
 }
 
 model Credential {
   id     Int    @id @default(autoincrement())
   type   String
   key    Json
-  user   User?  @relation(fields: [userId], references: [id])
   userId Int?
-}
-
-enum UserPlan {
-  FREE
-  TRIAL
-  PRO
+  user   User?  @relation(fields: [userId], references: [id])
 }
 
 model User {
@@ -73,38 +59,29 @@ model User {
   bufferTime          Int                @default(0)
   hideBranding        Boolean            @default(false)
   theme               String?
-  createdDate         DateTime           @default(now()) @map(name: "created")
-  eventTypes          EventType[]        @relation("user_eventtype")
+  createdDate         DateTime           @default(now()) @map("created")
+  completedOnboarding Boolean?           @default(false)
+  plan                UserPlan           @default(PRO)
+  availability        Availability[]
+  bookings            Booking[]
   credentials         Credential[]
   teams               Membership[]
-  bookings            Booking[]
-  availability        Availability[]
+  Schedule            Schedule[]
   selectedCalendars   SelectedCalendar[]
-  completedOnboarding Boolean?           @default(false)
-  twoFactorSecret     String?
-  twoFactorEnabled    Boolean            @default(false)
+  eventTypes          EventType[]        @relation("user_eventtype")
 
-
-  plan     UserPlan   @default(PRO)
-  Schedule Schedule[]
-
-  @@map(name: "users")
+  @@map("users")
 }
 
 model Team {
-  id            Int          @id @default(autoincrement())
-  name          String?
-  slug          String?      @unique
-  logo          String?
-  bio           String?
-  hideBranding  Boolean      @default(false)
-  members       Membership[]
-  eventTypes    EventType[]
-}
-
-enum MembershipRole {
-  MEMBER
-  OWNER
+  id           Int          @id @default(autoincrement())
+  name         String?
+  slug         String?      @unique
+  logo         String?
+  bio          String?
+  hideBranding Boolean      @default(false)
+  eventTypes   EventType[]
+  members      Membership[]
 }
 
 model Membership {
@@ -133,8 +110,8 @@ model BookingReference {
   id        Int      @id @default(autoincrement())
   type      String
   uid       String
-  booking   Booking? @relation(fields: [bookingId], references: [id])
   bookingId Int?
+  booking   Booking? @relation(fields: [bookingId], references: [id])
 }
 
 model Attendee {
@@ -142,88 +119,71 @@ model Attendee {
   email     String
   name      String
   timeZone  String
-  booking   Booking? @relation(fields: [bookingId], references: [id])
   bookingId Int?
-}
-
-enum BookingStatus {
-  CANCELLED @map("cancelled")
-  ACCEPTED  @map("accepted")
-  REJECTED  @map("rejected")
-  PENDING   @map("pending")
+  booking   Booking? @relation(fields: [bookingId], references: [id])
 }
 
 model Booking {
   id          Int                @id @default(autoincrement())
   uid         String             @unique
-  user        User?              @relation(fields: [userId], references: [id])
   userId      Int?
-  references  BookingReference[]
-  eventType   EventType?         @relation(fields: [eventTypeId], references: [id])
   eventTypeId Int?
-
   title       String
   description String?
   startTime   DateTime
   endTime     DateTime
-
-  attendees Attendee[]
-  location  String?
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime?
-  confirmed Boolean   @default(true)
-  rejected  Boolean   @default(false)
-  status    BookingStatus @default(ACCEPTED)
+  location    String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime?
+  confirmed   Boolean            @default(true)
+  rejected    Boolean            @default(false)
+  status      BookingStatus      @default(ACCEPTED)
+  eventType   EventType?         @relation(fields: [eventTypeId], references: [id])
+  user        User?              @relation(fields: [userId], references: [id])
+  attendees   Attendee[]
+  references  BookingReference[]
 }
 
 model Schedule {
   id            Int        @id @default(autoincrement())
-  user          User?      @relation(fields: [userId], references: [id])
   userId        Int?
-  eventType     EventType? @relation(fields: [eventTypeId], references: [id])
   eventTypeId   Int?
   title         String?
   freeBusyTimes Json?
+  eventType     EventType? @relation(fields: [eventTypeId], references: [id])
+  user          User?      @relation(fields: [userId], references: [id])
 }
 
 model Availability {
   id          Int        @id @default(autoincrement())
   label       String?
-  user        User?      @relation(fields: [userId], references: [id])
   userId      Int?
-  eventType   EventType? @relation(fields: [eventTypeId], references: [id])
   eventTypeId Int?
   days        Int[]
   startTime   Int
   endTime     Int
   date        DateTime?  @db.Date
+  eventType   EventType? @relation(fields: [eventTypeId], references: [id])
+  user        User?      @relation(fields: [userId], references: [id])
 }
 
 model SelectedCalendar {
-  user        User   @relation(fields: [userId], references: [id])
   userId      Int
   integration String
   externalId  String
+  user        User   @relation(fields: [userId], references: [id])
 
   @@id([userId, integration, externalId])
-}
-
-enum EventTypeCustomInputType {
-  TEXT      @map("text")
-  TEXTLONG  @map("textLong")
-  NUMBER    @map("number")
-  BOOL      @map("bool")
 }
 
 model EventTypeCustomInput {
   id          Int                      @id @default(autoincrement())
   eventTypeId Int
-  eventType   EventType                @relation(fields: [eventTypeId], references: [id])
   label       String
   type        EventTypeCustomInputType
   required    Boolean
   placeholder String                   @default("")
+  eventType   EventType                @relation(fields: [eventTypeId], references: [id])
 }
 
 model ResetPasswordRequest {
@@ -234,14 +194,44 @@ model ResetPasswordRequest {
   expires   DateTime
 }
 
-enum ReminderType {
-  PENDING_BOOKING_CONFIRMATION
-}
-
 model ReminderMail {
   id             Int          @id @default(autoincrement())
   referenceId    Int
   reminderType   ReminderType
   elapsedMinutes Int
   createdAt      DateTime     @default(now())
+}
+
+enum SchedulingType {
+  ROUND_ROBIN @map("roundRobin")
+  COLLECTIVE @map("collective")
+}
+
+enum UserPlan {
+  FREE
+  TRIAL
+  PRO
+}
+
+enum MembershipRole {
+  MEMBER
+  OWNER
+}
+
+enum BookingStatus {
+  CANCELLED @map("cancelled")
+  ACCEPTED @map("accepted")
+  REJECTED @map("rejected")
+  PENDING @map("pending")
+}
+
+enum EventTypeCustomInputType {
+  TEXT @map("text")
+  TEXTLONG @map("textLong")
+  NUMBER @map("number")
+  BOOL @map("bool")
+}
+
+enum ReminderType {
+  PENDING_BOOKING_CONFIRMATION
 }
