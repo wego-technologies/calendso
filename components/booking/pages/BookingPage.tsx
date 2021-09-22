@@ -124,9 +124,8 @@ const BookingPage = (props: any): JSX.Element => {
       });
       // TODO When the endpoint is fixed, change this to await the result again
       //if (res.ok) {
-      let successUrl = `/success?date=${encodeURIComponent(date)}&type=${props.eventType.id}&user=${
-        props.profile.slug
-      }&reschedule=${!!rescheduleUid}&name=${payload.name}`;
+      let successUrl = `/success?date=${encodeURIComponent(date)}&type=${props.eventType.id}&user=${props.profile.slug
+        }&reschedule=${!!rescheduleUid}&name=${payload.name}`;
       if (payload["location"]) {
         if (payload["location"].includes("integration")) {
           successUrl += "&location=" + encodeURIComponent("Web conferencing details to follow.");
@@ -318,6 +317,7 @@ const BookingPage = (props: any): JSX.Element => {
                                 id={"custom_" + input.id}
                                 className="w-4 h-4 mr-2 text-black border-gray-300 rounded focus:ring-blue-600"
                                 placeholder=""
+                                required={input.required}
                               />
                               <label
                                 htmlFor={"custom_" + input.id}
@@ -328,42 +328,48 @@ const BookingPage = (props: any): JSX.Element => {
                           )}
                         </div>
                       ))}
-                  <div className="mb-4">
-                    {!guestToggle && (
-                      <label
-                        onClick={toggleGuestEmailInput}
-                        htmlFor="guests"
-                        className="block mb-1 text-sm font-medium text-blue-500 dark:text-white hover:cursor-pointer">
-                        + Additional Guests
-                      </label>
-                    )}
-                    {guestToggle && (
-                      <div>
+                  {!props.eventType.disableGuests && (
+                    <div className="mb-4">
+                      {!guestToggle && (
                         <label
+                          onClick={toggleGuestEmailInput}
                           htmlFor="guests"
-                          className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
-                          Guests
+                          className="block mb-1 text-sm font-medium text-blue-500 dark:text-white hover:cursor-pointer">
+                          + Additional Guests
                         </label>
-                        <ReactMultiEmail
-                          placeholder="guest@example.com"
-                          emails={guestEmails}
-                          onChange={(_emails: string[]) => {
-                            setGuestEmails(_emails);
-                          }}
-                          getLabel={(email: string, index: number, removeEmail: (index: number) => void) => {
-                            return (
-                              <div data-tag key={index}>
-                                {email}
-                                <span data-tag-handle onClick={() => removeEmail(index)}>
-                                  ×
-                                </span>
-                              </div>
-                            );
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
+                      )}
+                      {guestToggle && (
+                        <div>
+                          <label
+                            htmlFor="guests"
+                            className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
+                            Guests
+                          </label>
+                          <ReactMultiEmail
+                            placeholder="guest@example.com"
+                            emails={guestEmails}
+                            onChange={(_emails: string[]) => {
+                              setGuestEmails(_emails);
+                            }}
+                            getLabel={(
+                              email: string,
+                              index: number,
+                              removeEmail: (index: number) => void
+                            ) => {
+                              return (
+                                <div data-tag key={index}>
+                                  {email}
+                                  <span data-tag-handle onClick={() => removeEmail(index)}>
+                                    ×
+                                  </span>
+                                </div>
+                              );
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="mb-4">
                     <label
                       htmlFor="notes"
