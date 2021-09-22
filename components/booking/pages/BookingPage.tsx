@@ -124,8 +124,9 @@ const BookingPage = (props: any): JSX.Element => {
       });
       // TODO When the endpoint is fixed, change this to await the result again
       //if (res.ok) {
-      let successUrl = `/success?date=${encodeURIComponent(date)}&type=${props.eventType.id}&user=${props.profile.slug
-        }&reschedule=${!!rescheduleUid}&name=${payload.name}`;
+      let successUrl = `/success?date=${encodeURIComponent(date)}&type=${props.eventType.id}&user=${
+        props.profile.slug
+      }&reschedule=${!!rescheduleUid}&name=${payload.name}`;
       if (payload["location"]) {
         if (payload["location"].includes("integration")) {
           successUrl += "&location=" + encodeURIComponent("Web conferencing details to follow.");
@@ -147,7 +148,7 @@ const BookingPage = (props: any): JSX.Element => {
         <Head>
           <title>
             {rescheduleUid ? "Reschedule" : "Confirm"} your {props.eventType.title} with {props.profile.name}{" "}
-            | Cal.com
+            | Gatego Scheduling
           </title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
