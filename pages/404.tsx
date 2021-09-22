@@ -1,8 +1,9 @@
 import { ChevronRightIcon } from "@heroicons/react/solid";
 import { BookOpenIcon, CheckIcon, DesktopComputerIcon, DocumentTextIcon } from "@heroicons/react/outline";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
-import Link from "next/link";
+
 import { HeadSeo } from "@components/seo/head-seo";
 
 const links = [
@@ -42,31 +43,31 @@ export default function Custom404() {
           noindex: true,
         }}
       />
-      <div className="bg-white min-h-screen px-4">
-        <main className="max-w-xl mx-auto pb-6 pt-16 sm:pt-24">
+      <div className="min-h-screen px-4 bg-white">
+        <main className="max-w-xl pt-16 pb-6 mx-auto sm:pt-24">
           <div className="text-center">
-            <p className="text-sm font-semibold text-black uppercase tracking-wide">404 error</p>
-            <h1 className="mt-2 text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+            <p className="text-sm font-semibold tracking-wide text-black uppercase">404 error</p>
+            <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
               This page does not exist.
             </h1>
             <span className="inline-block mt-2 text-lg ">
-                Check for spelling mistakes or go back to the previous page.
+              Check for spelling mistakes or go back to the previous page.
             </span>
           </div>
           <div className="mt-12">
-            <h2 className="text-sm font-semibold text-gray-500 tracking-wide uppercase">Popular pages</h2>
+            <h2 className="text-sm font-semibold tracking-wide text-gray-500 uppercase">Popular pages</h2>
 
             <ul role="list" className="mt-4 border-gray-200 divide-y divide-gray-200">
               {links.map((link, linkIdx) => (
                 <li key={linkIdx} className="px-4 py-2">
                   <Link href={link.href}>
-                    <a className="relative py-6 flex items-start space-x-4">
+                    <a className="relative flex items-start py-6 space-x-4">
                       <div className="flex-shrink-0">
-                        <span className="flex items-center justify-center h-12 w-12 rounded-lg bg-gray-50">
-                          <link.icon className="h-6 w-6 text-gray-700" aria-hidden="true" />
+                        <span className="flex items-center justify-center w-12 h-12 rounded-lg bg-gray-50">
+                          <link.icon className="w-6 h-6 text-gray-700" aria-hidden="true" />
                         </span>
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="flex-1 min-w-0">
                         <h3 className="text-base font-medium text-gray-900">
                           <span className="rounded-sm focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-gray-500">
                             <span className="absolute inset-0" aria-hidden="true" />
@@ -75,8 +76,8 @@ export default function Custom404() {
                         </h3>
                         <p className="text-base text-gray-500">{link.description}</p>
                       </div>
-                      <div className="flex-shrink-0 self-center">
-                        <ChevronRightIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                      <div className="self-center flex-shrink-0">
+                        <ChevronRightIcon className="w-5 h-5 text-gray-400" aria-hidden="true" />
                       </div>
                     </a>
                   </Link>
