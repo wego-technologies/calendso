@@ -2,7 +2,7 @@ import { DefaultSeoProps } from "next-seo";
 import { HeadSeoProps } from "@components/seo/head-seo";
 
 const seoImages = {
-  default: "https://cal.com/og-image.png",
+  default: "https://gatego.io/og-image.png",
   ogImage: "https://og-image-one-pi.vercel.app/",
 };
 
@@ -15,12 +15,12 @@ export const seoConfig: {
   defaultNextSeo: DefaultSeoProps;
 } = {
   headSeo: {
-    siteName: "Cal.com",
+    siteName: "Gatego Scheduling",
   },
   defaultNextSeo: {
     twitter: {
-      handle: "@calendso",
-      site: "@Calendso",
+      handle: "@wego_tech",
+      site: "@wego_tech",
       cardType: "summary_large_image",
     },
   },
