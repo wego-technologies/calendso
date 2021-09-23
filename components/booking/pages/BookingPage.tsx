@@ -1,20 +1,22 @@
-import Head from "next/head";
-import { useRouter } from "next/router";
 import { CalendarIcon, ClockIcon, ExclamationIcon, LocationMarkerIcon } from "@heroicons/react/solid";
 import { EventTypeCustomInputType } from "@prisma/client";
-import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@lib/telemetry";
-import { useEffect, useState } from "react";
 import dayjs from "dayjs";
-import "react-phone-number-input/style.css";
-import PhoneInput from "react-phone-number-input";
-import { LocationType } from "@lib/location";
-import { Button } from "@components/ui/Button";
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import { ReactMultiEmail } from "react-multi-email";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+
 import { asStringOrNull } from "@lib/asStringOrNull";
 import { timeZone } from "@lib/clock";
 import useTheme from "@lib/hooks/useTheme";
-import AvatarGroup from "@components/ui/AvatarGroup";
+import { LocationType } from "@lib/location";
 import { parseZone } from "@lib/parseZone";
+import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@lib/telemetry";
+
+import AvatarGroup from "@components/ui/AvatarGroup";
+import { Button } from "@components/ui/Button";
 
 const BookingPage = (props: any): JSX.Element => {
   const router = useRouter();
@@ -124,8 +126,9 @@ const BookingPage = (props: any): JSX.Element => {
       });
       // TODO When the endpoint is fixed, change this to await the result again
       //if (res.ok) {
-      let successUrl = `/success?date=${encodeURIComponent(date)}&type=${props.eventType.id}&user=${props.profile.slug
-        }&reschedule=${!!rescheduleUid}&name=${payload.name}`;
+      let successUrl = `/success?date=${encodeURIComponent(date)}&type=${props.eventType.id}&user=${
+        props.profile.slug
+      }&reschedule=${!!rescheduleUid}&name=${payload.name}`;
       if (payload["location"]) {
         if (payload["location"].includes("integration")) {
           successUrl += "&location=" + encodeURIComponent("Web conferencing details to follow.");
@@ -348,7 +351,7 @@ const BookingPage = (props: any): JSX.Element => {
                             Guests
                           </label>
                           <ReactMultiEmail
-                            placeholder="guest@example.com"
+                            placeholder=""
                             emails={guestEmails}
                             onChange={(_emails: string[]) => {
                               setGuestEmails(_emails);
