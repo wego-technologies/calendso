@@ -50,7 +50,7 @@ const AvailableTimes: FC<AvailableTimesProps> = ({
   });
 
   return (
-    <div className="mt-8 -mb-5 text-center sm:pl-4 sm:mt-0 sm:w-1/3">
+    <div className="mt-8 text-center sm:pl-4 sm:mt-0 sm:w-1/3 md:-mb-5">
       <div className="mb-4 text-lg font-light text-left text-gray-600">
         <span className="w-1/2 text-gray-600 dark:text-white">
           <strong>{date.format("dddd")}</strong>
