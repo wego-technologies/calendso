@@ -2,6 +2,7 @@ import { Prisma, Credential } from "@prisma/client";
 
 import { EventResult } from "@lib/events/EventManager";
 import logger from "@lib/logger";
+import { VideoCallData } from "@lib/videoClient";
 
 import CalEventParser from "./CalEventParser";
 import EventOrganizerMail from "./emails/EventOrganizerMail";
@@ -554,9 +555,10 @@ const createEvent = async (
   credential: Credential,
   calEvent: CalendarEvent,
   noMail = false,
-  maybeUid: string = null
+  maybeUid?: string,
+  optionalVideoCallData?: VideoCallData
 ): Promise<EventResult> => {
-  const parser: CalEventParser = new CalEventParser(calEvent, maybeUid);
+  const parser: CalEventParser = new CalEventParser(calEvent, maybeUid, optionalVideoCallData);
   const uid: string = parser.getUid();
   /*
    * Matching the credential type is a workaround because the office calendar simply strips away newlines (\n and \r).
@@ -607,9 +609,10 @@ const updateEvent = async (
   credential: Credential,
   uidToUpdate: string,
   calEvent: CalendarEvent,
-  noMail = false
+  noMail = false,
+  optionalVideoCallData?: VideoCallData
 ): Promise<EventResult> => {
-  const parser: CalEventParser = new CalEventParser(calEvent);
+  const parser: CalEventParser = new CalEventParser(calEvent, undefined, optionalVideoCallData);
   const newUid: string = parser.getUid();
   const richEvent: CalendarEvent = parser.asRichEventPlain();
 

@@ -47,7 +47,7 @@ export default function Custom404() {
         <main className="max-w-xl pt-16 pb-6 mx-auto sm:pt-24">
           <div className="text-center">
             <p className="text-sm font-semibold tracking-wide text-black uppercase">404 error</p>
-            <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
+            <h1 className="mt-2 text-4xl font-extrabold tracking-tight text-gray-900 font-cal sm:text-5xl">
               This page does not exist.
             </h1>
             <span className="inline-block mt-2 text-lg ">

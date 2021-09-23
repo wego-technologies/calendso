@@ -167,7 +167,9 @@ const BookingPage = (props: any): JSX.Element => {
                       }))
                   )}
                 />
-                <h2 className="font-medium text-gray-500 dark:text-gray-300">{props.profile.name}</h2>
+                <h2 className="font-medium text-gray-500 font-cal dark:text-gray-300">
+                  {props.profile.name}
+                </h2>
                 <h1 className="mb-4 text-3xl font-semibold text-gray-800 dark:text-white">
                   {props.eventType.title}
                 </h1>
