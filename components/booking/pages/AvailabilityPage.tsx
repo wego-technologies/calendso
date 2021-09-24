@@ -114,8 +114,8 @@ const AvailabilityPage = ({ profile, eventType, workingHours }: AvailabilityPage
                     truncateAfter={5}
                   />
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-black dark:text-gray-300">{profile.name}</p>
-                    <div className="flex gap-2 text-xs font-medium text-gray-600">
+                    <p className="font-medium text-gray-500 font-cal dark:text-gray-300">{profile.name}</p>
+                    <div className="mb-4 text-3xl font-semibold text-gray-800 font-cal dark:text-white">
                       {eventType.title}
                       <div>
                         <ClockIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
