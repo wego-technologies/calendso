@@ -392,11 +392,11 @@ const BookingPage = (props: any): JSX.Element => {
                   </div>
                   <div className="flex items-start space-x-2">
                     {/* TODO: add styling props to <Button variant="" color="" /> and get rid of btn-primary */}
-                    <Button type="submit" loading={loading}>
-                      {rescheduleUid ? "Reschedule" : "Confirm"}
-                    </Button>
                     <Button color="secondary" type="button" onClick={() => router.back()}>
                       Cancel
+                    </Button>
+                    <Button type="submit" loading={loading}>
+                      {rescheduleUid ? "Reschedule" : "Confirm"}
                     </Button>
                   </div>
                 </form>
