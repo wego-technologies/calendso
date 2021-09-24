@@ -21,7 +21,7 @@ import { Button } from "@components/ui/Button";
 const BookingPage = (props: any): JSX.Element => {
   const router = useRouter();
   const { rescheduleUid } = router.query;
-  const themeLoaded = useTheme(props.profile.theme);
+  const { isReady } = useTheme(props.profile.theme);
 
   const date = asStringOrNull(router.query.date);
   const timeFormat = asStringOrNull(router.query.clock) === "24h" ? "H:mm" : "h:mma";
@@ -145,18 +145,18 @@ const BookingPage = (props: any): JSX.Element => {
   };
 
   return (
-    themeLoaded && (
-      <div>
-        <Head>
-          <title>
-            {rescheduleUid ? "Reschedule" : "Confirm"} your {props.eventType.title} with {props.profile.name}{" "}
-            | Gatego Scheduling
-          </title>
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
+    <div>
+      <Head>
+        <title>
+          {rescheduleUid ? "Reschedule" : "Confirm"} your {props.eventType.title} with {props.profile.name} |
+          Cal.gatego.io
+        </title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
 
-        <main className="max-w-3xl mx-auto my-0 sm:my-24">
-          <div className="overflow-hidden bg-white border border-gray-200 dark:bg-neutral-900 dark:border-0 sm:rounded-lg">
+      <main className="max-w-3xl mx-auto my-0 sm:my-24">
+        {isReady && (
+          <div className="overflow-hidden bg-white border border-gray-200 dark:bg-neutral-900 dark:border-0 sm:rounded-sm">
             <div className="px-4 py-5 sm:flex sm:p-4">
               <div className="sm:w-1/2 sm:border-r sm:dark:border-black">
                 <AvatarGroup
@@ -417,9 +417,9 @@ const BookingPage = (props: any): JSX.Element => {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    )
+        )}
+      </main>
+    </div>
   );
 };
 
