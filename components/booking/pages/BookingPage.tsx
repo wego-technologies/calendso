@@ -196,7 +196,7 @@ const BookingPage = (props: any): JSX.Element => {
                 <form onSubmit={bookingHandler}>
                   <div className="mb-4">
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-white">
-                      Your name
+                      Your Name
                     </label>
                     <div className="mt-1">
                       <input
@@ -214,7 +214,7 @@ const BookingPage = (props: any): JSX.Element => {
                     <label
                       htmlFor="email"
                       className="block text-sm font-medium text-gray-700 dark:text-white">
-                      Email address
+                      Email Address
                     </label>
                     <div className="mt-1">
                       <input
