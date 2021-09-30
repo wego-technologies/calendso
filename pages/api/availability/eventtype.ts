@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+
 import { getSession } from "@lib/auth";
 import prisma from "@lib/prisma";
 
@@ -88,7 +89,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       periodStartDate: req.body.periodStartDate,
       periodEndDate: req.body.periodEndDate,
       periodCountCalendarDays: req.body.periodCountCalendarDays,
-      minimumBookingNotice: req.body.minimumBookingNotice,
+      minimumBookingNotice: req.body.minimumBookingNotice
+        ? parseInt(req.body.minimumBookingNotice)
+        : undefined,
+      price: req.body.price,
+      currency: req.body.currency,
     };
 
     if (req.body.schedulingType) {

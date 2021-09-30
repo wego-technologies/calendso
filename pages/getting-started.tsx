@@ -1,6 +1,4 @@
-import Head from "next/head";
-import prisma from "@lib/prisma";
-import { useSession } from "next-auth/client";
+import { ArrowRightIcon } from "@heroicons/react/outline";
 import {
   EventType,
   EventTypeCreateInput,
@@ -9,29 +7,34 @@ import {
   User,
   UserUpdateInput,
 } from "@prisma/client";
-import { NextPageContext } from "next";
-import React, { useEffect, useRef, useState } from "react";
-import { validJson } from "@lib/jsonUtils";
-import TimezoneSelect from "react-timezone-select";
-import Text from "@components/ui/Text";
-import ErrorAlert from "@components/ui/alerts/Error";
+import classnames from "classnames";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
+import debounce from "lodash.debounce";
+import { NextPageContext } from "next";
+import { useSession } from "next-auth/client";
+import Head from "next/head";
+import { useRouter } from "next/router";
+import { Integration } from "pages/integrations";
+import React, { useEffect, useRef, useState } from "react";
+import TimezoneSelect from "react-timezone-select";
+
+import { getSession } from "@lib/auth";
 import AddCalDavIntegration, {
   ADD_CALDAV_INTEGRATION_FORM_TITLE,
 } from "@lib/integrations/CalDav/components/AddCalDavIntegration";
+import getIntegrations from "@lib/integrations/getIntegrations";
+import prisma from "@lib/prisma";
+
 import { Dialog, DialogClose, DialogContent, DialogHeader } from "@components/Dialog";
-import SchedulerForm, { SCHEDULE_FORM_ID } from "@components/ui/Schedule/Schedule";
-import { useRouter } from "next/router";
-import { Integration } from "pages/integrations";
-import { AddCalDavIntegrationRequest } from "../lib/integrations/CalDav/components/AddCalDavIntegration";
-import classnames from "classnames";
-import { ArrowRightIcon } from "@heroicons/react/outline";
-import { getSession } from "@lib/auth";
-import Button from "@components/ui/Button";
-import debounce from "lodash.debounce";
 import Loader from "@components/Loader";
+import Button from "@components/ui/Button";
+import SchedulerForm, { SCHEDULE_FORM_ID } from "@components/ui/Schedule/Schedule";
+import Text from "@components/ui/Text";
+import ErrorAlert from "@components/ui/alerts/Error";
+
+import { AddCalDavIntegrationRequest } from "../lib/integrations/CalDav/components/AddCalDavIntegration";
 import getEventTypes from "../lib/queries/event-types/get-event-types";
 
 dayjs.extend(utc);
@@ -563,7 +566,7 @@ export default function Onboarding(props: OnboardingProps) {
       <div className="mx-auto py-24 px-4">
         <article className="relative">
           <section className="sm:mx-auto sm:w-full sm:max-w-md space-y-4">
-            <header className="">
+            <header>
               <Text className="text-white" variant="largetitle">
                 {steps[currentStep].title}
               </Text>
@@ -685,40 +688,7 @@ export async function getServerSideProps(context: NextPageContext) {
     },
   });
 
-  integrations = [
-    {
-      installed: !!(process.env.GOOGLE_API_CREDENTIALS && validJson(process.env.GOOGLE_API_CREDENTIALS)),
-      credential: credentials.find((integration) => integration.type === "google_calendar") || null,
-      type: "google_calendar",
-      title: "Google Calendar",
-      imageSrc: "integrations/google-calendar.svg",
-      description: "Gmail, G Suite",
-    },
-    {
-      installed: !!(process.env.MS_GRAPH_CLIENT_ID && process.env.MS_GRAPH_CLIENT_SECRET),
-      credential: credentials.find((integration) => integration.type === "office365_calendar") || null,
-      type: "office365_calendar",
-      title: "Office 365 Calendar",
-      imageSrc: "integrations/outlook.svg",
-      description: "Office 365, Outlook.com, live.com, or hotmail calendar",
-    },
-    {
-      installed: !!(process.env.ZOOM_CLIENT_ID && process.env.ZOOM_CLIENT_SECRET),
-      credential: credentials.find((integration) => integration.type === "zoom_video") || null,
-      type: "zoom_video",
-      title: "Zoom",
-      imageSrc: "integrations/zoom.svg",
-      description: "Video Conferencing",
-    },
-    {
-      installed: true,
-      credential: credentials.find((integration) => integration.type === "caldav_calendar") || null,
-      type: "caldav_calendar",
-      title: "Caldav",
-      imageSrc: "integrations/caldav.svg",
-      description: "CalDav Server",
-    },
-  ];
+  integrations = getIntegrations(credentials);
 
   eventTypes = await prisma.eventType.findMany({
     where: {
@@ -745,6 +715,7 @@ export async function getServerSideProps(context: NextPageContext) {
 
   return {
     props: {
+      session,
       user,
       integrations,
       eventTypes,

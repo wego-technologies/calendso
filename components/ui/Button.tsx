@@ -1,11 +1,12 @@
-import classNames from "@lib/classNames";
-import { SVGComponent } from "@lib/types/SVGComponent";
 import Link, { LinkProps } from "next/link";
 import React, { forwardRef } from "react";
 
+import classNames from "@lib/classNames";
+import { SVGComponent } from "@lib/types/SVGComponent";
+
 export type ButtonProps = {
   color?: "primary" | "secondary" | "minimal" | "warn";
-  size?: "base" | "sm" | "lg" | "fab";
+  size?: "base" | "sm" | "lg" | "fab" | "icon";
   loading?: boolean;
   disabled?: boolean;
   onClick?: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void;
@@ -13,9 +14,9 @@ export type ButtonProps = {
   EndIcon?: SVGComponent;
   shallow?: boolean;
 } & (
-  | (Omit<JSX.IntrinsicElements["a"], "href"> & { href: LinkProps["href"] })
-  | (JSX.IntrinsicElements["button"] & { href?: never })
-);
+    | (Omit<JSX.IntrinsicElements["a"], "href"> & { href: LinkProps["href"] })
+    | (JSX.IntrinsicElements["button"] & { href?: never })
+  );
 
 export const Button = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonProps>(function Button(
   props: ButtonProps,
@@ -51,27 +52,28 @@ export const Button = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonPr
         size === "sm" && "px-3 py-2 text-sm leading-4 font-medium rounded-lg",
         size === "base" && "px-3 py-2 text-sm font-medium rounded-lg",
         size === "lg" && "px-4 py-2 text-base font-medium rounded-lg",
+        size === "icon" && "group p-2 border border-transparent text-neutral-400 hover:border-gray-200",
         // turn button into a floating action button (fab)
         size === "fab" ? "fixed" : "relative",
         size === "fab" && "justify-center bottom-20 right-8 rounded-full p-4 w-14 h-14",
 
         // different styles depending on color
         color === "primary" &&
-          (disabled
-            ? "border border-transparent bg-blue-200 text-white"
-            : "border border-transparent text-white bg-blue-600 hover:bg-blue-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-600"),
+        (disabled
+          ? "border border-transparent bg-blue-200 text-white"
+          : "border border-transparent text-white bg-blue-600 hover:bg-blue-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-600"),
         color === "secondary" &&
-          (disabled
-            ? "border border-blue-600 text-gray-400 bg-white"
-            : "border border-blue-600 text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-600 dark:bg-transparent dark:text-white dark:border-gray-800 dark:hover:bg-gray-900"),
+        (disabled
+          ? "border border-blue-600 text-gray-400 bg-white"
+          : "border border-blue-600 text-gray-700 bg-white hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-600 dark:bg-transparent dark:text-white dark:border-gray-800 dark:hover:bg-gray-900"),
         color === "minimal" &&
-          (disabled
-            ? "text-gray-400 bg-transparent"
-            : "text-gray-700 bg-transparent hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:bg-gray-100 focus:ring-neutral-500"),
+        (disabled
+          ? "text-gray-400 bg-transparent"
+          : "text-gray-700 bg-transparent hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:bg-gray-100 focus:ring-neutral-500"),
         color === "warn" &&
-          (disabled
-            ? "text-gray-400 bg-transparent"
-            : "text-red-700 bg-transparent hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:bg-red-50 focus:ring-red-500"),
+        (disabled
+          ? "text-gray-400 bg-transparent"
+          : "text-red-700 bg-transparent hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:bg-red-50 focus:ring-red-500"),
         // set not-allowed cursor if disabled
         loading ? "cursor-wait" : disabled ? "cursor-not-allowed" : "",
         props.className
@@ -79,19 +81,26 @@ export const Button = forwardRef<HTMLAnchorElement | HTMLButtonElement, ButtonPr
       // if we click a disabled button, we prevent going through the click handler
       onClick: disabled
         ? (e: React.MouseEvent<HTMLElement, MouseEvent>) => {
-            e.preventDefault();
-          }
+          e.preventDefault();
+        }
         : props.onClick,
     },
     <>
-      {StartIcon && <StartIcon className="inline w-5 h-5 mr-2 -ml-1" />}
+      {StartIcon && (
+        <StartIcon
+          className={classNames(
+            "inline",
+            size === "icon" ? "w-5 h-5 group-hover:text-black" : "w-5 h-5 mr-2 -ml-1"
+          )}
+        />
+      )}
       {props.children}
       {loading && (
         <div className="absolute transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
           <svg
             className={classNames(
               "w-5 h-5 mx-4 animate-spin",
-              color === "primary" ? "text-white" : "text-black"
+              color === "primary" ? "dark:text-black text-white" : "text-black"
             )}
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
