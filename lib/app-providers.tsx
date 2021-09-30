@@ -12,7 +12,11 @@ const AppProviders = (props: AppProps) => {
     <TelemetryProvider value={createTelemetryClient()}>
       <IdProvider>
         <DynamicIntercomProvider>
-          <Provider session={props.pageProps.session}>{props.children}</Provider>
+          <Hydrate state={pageProps.dehydratedState}>
+            <IdProvider>
+              <Provider session={pageProps.session}>{children}</Provider>
+            </IdProvider>
+          </Hydrate>
         </DynamicIntercomProvider>
       </IdProvider>
     </TelemetryProvider>

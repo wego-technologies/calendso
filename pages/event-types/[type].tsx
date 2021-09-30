@@ -165,8 +165,8 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
       advancedPayload.minimumBookingNotice = asNumberOrUndefined(formData.minimumBookingNotice);
       // prettier-ignore
       advancedPayload.price =
-        !requirePayment ? undefined                                                     :
-        formData.price  ? Math.round(parseFloat(asStringOrThrow(formData.price)) * 100) :
+        !requirePayment ? undefined :
+          formData.price ? Math.round(parseFloat(asStringOrThrow(formData.price)) * 100) :
         /* otherwise */   0;
       advancedPayload.currency = currency;
     }
@@ -187,9 +187,9 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
       ...advancedPayload,
       ...(team
         ? {
-            schedulingType: formData.schedulingType as SchedulingType,
-            users,
-          }
+          schedulingType: formData.schedulingType as SchedulingType,
+          users,
+        }
         : {}),
     };
 
@@ -335,9 +335,8 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
     endDate: new Date(eventType.periodEndDate || Date.now()),
   });
 
-  const permalink = `${process.env.NEXT_PUBLIC_APP_URL}/${
-    team ? `team/${team.slug}` : eventType.users[0].username
-  }/${eventType.slug}`;
+  const permalink = `${process.env.NEXT_PUBLIC_APP_URL}/${team ? `team/${team.slug}` : eventType.users[0].username
+    }/${eventType.slug}`;
 
   const mapUserToValue = ({
     id,
@@ -364,7 +363,7 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
             name="title"
             id="title"
             required
-            className="pl-0 w-full text-xl font-bold focus:text-black text-gray-500 hover:text-gray-700 bg-transparent border-none cursor-pointer focus:ring-0 focus:outline-none"
+            className="w-full pl-0 text-xl font-bold text-gray-500 bg-transparent border-none cursor-pointer focus:text-black hover:text-gray-700 focus:ring-0 focus:outline-none"
             placeholder="Quick Chat"
             defaultValue={eventType.title}
           />
@@ -572,7 +571,7 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
                         <label
                           htmlFor="schedulingType"
                           className="flex mt-2 text-sm font-medium text-neutral-700">
-                          <UsersIcon className="text-neutral-500 h-5 w-5 mr-2" /> Scheduling Type
+                          <UsersIcon className="w-5 h-5 mr-2 text-neutral-500" /> Scheduling Type
                         </label>
                       </div>
                       <RadioArea.Select
@@ -585,7 +584,7 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
                     <div className="block sm:flex">
                       <div className="mb-4 min-w-44 sm:mb-0">
                         <label htmlFor="users" className="flex mt-2 text-sm font-medium text-neutral-700">
-                          <UserAddIcon className="text-neutral-500 h-5 w-5 mr-2" /> Attendees
+                          <UserAddIcon className="w-5 h-5 mr-2 text-neutral-500" /> Attendees
                         </label>
                       </div>
                       <div className="w-full space-y-2">
@@ -778,7 +777,7 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
                                                 <select
                                                   id=""
                                                   name="periodDaysType"
-                                                  className="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-sm  focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                                  className="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                                                   defaultValue={
                                                     eventType.periodCountCalendarDays ? "1" : "0"
                                                   }>
@@ -833,17 +832,17 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
                           <>
                             <hr className="border-neutral-200" />
                             <div className="block sm:flex">
-                              <div className="min-w-44 mb-4 sm:mb-0">
+                              <div className="mb-4 min-w-44 sm:mb-0">
                                 <label
                                   htmlFor="payment"
-                                  className="text-sm flex font-medium text-neutral-700 mt-2">
+                                  className="flex mt-2 text-sm font-medium text-neutral-700">
                                   Payment
                                 </label>
                               </div>
 
                               <div className="flex flex-col">
                                 <div className="w-full">
-                                  <div className="block sm:flex items-center">
+                                  <div className="items-center block sm:flex">
                                     <div className="w-full">
                                       <div className="relative flex items-start">
                                         <div className="flex items-center h-5">
@@ -852,7 +851,7 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
                                             id="requirePayment"
                                             name="requirePayment"
                                             type="checkbox"
-                                            className="focus:ring-primary-500 h-4 w-4 text-primary-600 border-gray-300 rounded"
+                                            className="w-4 h-4 border-gray-300 rounded focus:ring-primary-500 text-primary-600"
                                             defaultChecked={requirePayment}
                                           />
                                         </div>
@@ -875,22 +874,22 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
                                 </div>
                                 {requirePayment && (
                                   <div className="w-full">
-                                    <div className="block sm:flex items-center">
+                                    <div className="items-center block sm:flex">
                                       <div className="w-full">
-                                        <div className="mt-1 relative rounded-sm shadow-sm">
+                                        <div className="relative mt-1 rounded-sm shadow-sm">
                                           <input
                                             type="number"
                                             name="price"
                                             id="price"
                                             step="0.01"
                                             required
-                                            className="focus:ring-primary-500 focus:border-primary-500 block w-full pl-2 pr-12 sm:text-sm border-gray-300 rounded-sm"
+                                            className="block w-full pl-2 pr-12 border-gray-300 rounded-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                                             placeholder="Price"
                                             defaultValue={
                                               eventType.price > 0 ? eventType.price / 100.0 : undefined
                                             }
                                           />
-                                          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                             <span className="text-gray-500 sm:text-sm" id="duration">
                                               {new Intl.NumberFormat("en", {
                                                 style: "currency",
@@ -948,7 +947,12 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
               </a>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(permalink);
+                  navigator.clipboard.writeText(
+                    (`${process.env.NEXT_PUBLIC_APP_URL}/` ?? "https://cal.com/") +
+                    (team ? "team/" + team.slug : eventType.users[0].username) +
+                    "/" +
+                    eventType.slug
+                  );
                   showToast("Link copied!", "success");
                 }}
                 type="button"
@@ -1087,21 +1091,21 @@ const EventTypePage = (props: inferSSRProps<typeof getServerSideProps>) => {
                   </div>
                   {(selectedInputOption.value === EventTypeCustomInputType.TEXT ||
                     selectedInputOption.value === EventTypeCustomInputType.TEXTLONG) && (
-                    <div className="mb-2">
-                      <label htmlFor="placeholder" className="block text-sm font-medium text-gray-700">
-                        Placeholder
-                      </label>
-                      <div className="mt-1">
-                        <input
-                          type="text"
-                          name="placeholder"
-                          id="placeholder"
-                          className="shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-gray-300 rounded-sm"
-                          defaultValue={selectedCustomInput?.placeholder}
-                        />
+                      <div className="mb-2">
+                        <label htmlFor="placeholder" className="block text-sm font-medium text-gray-700">
+                          Placeholder
+                        </label>
+                        <div className="mt-1">
+                          <input
+                            type="text"
+                            name="placeholder"
+                            id="placeholder"
+                            className="block w-full border-gray-300 rounded-sm shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                            defaultValue={selectedCustomInput?.placeholder}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                   <div className="flex items-center h-5">
                     <input
                       id="required"
@@ -1294,10 +1298,10 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   const teamMembers = eventTypeObject.team
     ? eventTypeObject.team.members.map((member) => {
-        const user = member.user;
-        user.avatar = user.avatar || defaultAvatarSrc({ email: asStringOrUndefined(user.email) });
-        return user;
-      })
+      const user = member.user;
+      user.avatar = user.avatar || defaultAvatarSrc({ email: asStringOrUndefined(user.email) });
+      return user;
+    })
     : [];
 
   return {

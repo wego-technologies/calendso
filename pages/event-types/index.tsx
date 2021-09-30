@@ -285,7 +285,7 @@ const EventTypesPage = (props: PageProps) => {
   return (
     <div>
       <Head>
-        <title>Event Types | Cal.com</title>
+        <title>Event Types | Cal.gatego.io</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Shell
