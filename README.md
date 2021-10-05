@@ -1,3 +1,5 @@
+# Cal version modified by Wego Technologies
+This version of [Cal.com](https://cal.com?ref=wego-technologies) is modified for the use of wego technologies. The changes are mostly asthetic as to follow brand guidelines.
 <!-- PROJECT LOGO -->
 <p align="center">
   <a href="https://github.com/calendso/calendso">

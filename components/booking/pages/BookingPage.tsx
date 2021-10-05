@@ -208,16 +208,23 @@ const BookingPage = (props: any): JSX.Element => {
                 )}
                 {selectedLocation === LocationType.InPerson && (
                   <p className="mb-2 text-gray-500">
-                    <LocationMarkerIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
-                    {locationInfo(selectedLocation).address}
+                    <ClockIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
+                    {props.eventType.length} minutes
                   </p>
-                )}
+  {
+                  selectedLocation === LocationType.InPerson && (
+                    <p className="mb-2 text-gray-500">
+                      <LocationMarkerIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
+                      {locationInfo(selectedLocation).address}
+                    </p>
+                  )
+                }
                 <p className="mb-4 text-green-500">
                   <CalendarIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
                   {parseZone(date).format(timeFormat + ", dddd DD MMMM YYYY")}
                 </p>
                 <p className="mb-8 text-gray-600 dark:text-white">{props.eventType.description}</p>
-              </div>
+              </div >
               <div className="sm:w-1/2 sm:pl-8 sm:pr-4">
                 <form onSubmit={bookingHandler}>
                   <div className="mb-4">
@@ -442,11 +449,55 @@ const BookingPage = (props: any): JSX.Element => {
                   </div>
                 )}
               </div>
+            </div >
+          )}
+          </div >
+        )}
+        <div className="mb-4">
+          <label
+            htmlFor="notes"
+            className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
+            Additional notes
+          </label>
+          <textarea
+            name="notes"
+            id="notes"
+            rows={3}
+            className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm"
+            placeholder="Please share anything that will help prepare for our meeting."
+            defaultValue={props.booking ? props.booking.description : ""}
+          />
+        </div>
+        <div className="flex items-start space-x-2">
+          {/* TODO: add styling props to <Button variant="" color="" /> and get rid of btn-primary */}
+          <Button color="secondary" type="button" onClick={() => router.back()}>
+            Cancel
+          </Button>
+          <Button type="submit" loading={loading}>
+            {rescheduleUid ? "Reschedule" : "Confirm"}
+          </Button>
+        </div>
+      </form >
+      {error && (
+        <div className="p-4 mt-2 border-l-4 border-yellow-400 bg-yellow-50">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <ExclamationIcon className="w-5 h-5 text-yellow-400" aria-hidden="true" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                Could not {rescheduleUid ? "reschedule" : "book"} the meeting.
+              </p>
             </div>
           </div>
+        </div>
+      )}
+    </div >
+            </div >
+          </div >
         )}
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 

@@ -100,7 +100,7 @@ const AvailabilityPage = ({ profile, eventType, workingHours }: Props) => {
             (selectedDate ? "max-w-5xl" : "max-w-3xl")
           }>
           {isReady && (
-            <div className="bg-white border-gray-200 rounded-sm sm:dark:border-gray-600 dark:bg-gray-900 md:border">
+            <div className="bg-white border-gray-200 rounded-lg sm:dark:border-gray-600 dark:bg-gray-900 md:border">
               {/* mobile: details */}
               <div className="block p-4 sm:p-8 md:hidden">
                 <div className="flex items-center">
@@ -203,24 +203,26 @@ const AvailabilityPage = ({ profile, eventType, workingHours }: Props) => {
                   <TimezoneDropdown />
                 </div>
 
-                {selectedDate && (
-                  <AvailableTimes
-                    workingHours={workingHours}
-                    timeFormat={timeFormat}
-                    minimumBookingNotice={eventType.minimumBookingNotice}
-                    eventTypeId={eventType.id}
-                    eventLength={eventType.length}
-                    date={selectedDate}
-                    users={eventType.users}
-                    schedulingType={eventType.schedulingType ?? null}
-                  />
-                )}
-              </div>
-            </div>
+                {
+                  selectedDate && (
+                    <AvailableTimes
+                      workingHours={workingHours}
+                      timeFormat={timeFormat}
+                      minimumBookingNotice={eventType.minimumBookingNotice}
+                      eventTypeId={eventType.id}
+                      eventLength={eventType.length}
+                      date={selectedDate}
+                      users={eventType.users}
+                      schedulingType={eventType.schedulingType ?? null}
+                    />
+                  )
+                }
+              </div >
+            </div >
           )}
           {(!eventType.users[0] || !isBrandingHidden(eventType.users[0])) && <PoweredByCal />}
-        </main>
-      </div>
+        </main >
+      </div >
     </>
   );
 
