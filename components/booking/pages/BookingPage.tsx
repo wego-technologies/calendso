@@ -124,16 +124,30 @@ const BookingPage = (props: any): JSX.Element => {
         },
         method: "POST",
       });
-      // TODO When the endpoint is fixed, change this to await the result again
-      //if (res.ok) {
-      let successUrl = `/success?date=${encodeURIComponent(date)}&type=${props.eventType.id}&user=${
-        props.profile.slug
-      }&reschedule=${!!rescheduleUid}&name=${payload.name}`;
-      if (payload["location"]) {
-        if (payload["location"].includes("integration")) {
-          successUrl += "&location=" + encodeURIComponent("Web conferencing details to follow.");
-        } else {
-          successUrl += "&location=" + encodeURIComponent(payload["location"]);
+
+      if (content?.id) {
+        const params: { [k: string]: any } = {
+          date,
+          type: props.eventType.id,
+          user: props.profile.slug,
+          reschedule: !!rescheduleUid,
+          name: payload.name,
+          email: payload.email,
+        };
+
+        if (payload["location"]) {
+          if (payload["location"].includes("integration")) {
+            params.location = "Web conferencing details to follow.";
+          } else {
+            params.location = payload["location"];
+          }
+        }
+
+        const query = stringify(params);
+        let successUrl = `/success?${query}`;
+
+        if (content?.paymentUid) {
+          successUrl = createPaymentLink(content?.paymentUid, payload.name, date, false);
         }
       }
 
@@ -180,6 +194,18 @@ const BookingPage = (props: any): JSX.Element => {
                   <ClockIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
                   {props.eventType.length} minutes
                 </p>
+                {props.eventType.price > 0 && (
+                  <p className="px-2 py-1 mb-1 -ml-2 text-gray-500">
+                    <CreditCardIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
+                    <IntlProvider locale="en">
+                      <FormattedNumber
+                        value={props.eventType.price / 100.0}
+                        style="currency"
+                        currency={props.eventType.currency.toUpperCase()}
+                      />
+                    </IntlProvider>
+                  </p>
+                )}
                 {selectedLocation === LocationType.InPerson && (
                   <p className="mb-2 text-gray-500">
                     <LocationMarkerIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
@@ -221,6 +247,7 @@ const BookingPage = (props: any): JSX.Element => {
                         type="email"
                         name="email"
                         id="email"
+                        inputMode="email"
                         required
                         className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm"
                         placeholder="you@example.com"

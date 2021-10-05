@@ -19,14 +19,17 @@ import DatePicker from "@components/booking/DatePicker";
 import TimeOptions from "@components/booking/TimeOptions";
 import { HeadSeo } from "@components/seo/head-seo";
 import AvatarGroup from "@components/ui/AvatarGroup";
-import PoweredByCalendso from "@components/ui/PoweredByCalendso";
+import PoweredByCal from "@components/ui/PoweredByCal";
 
 import { AvailabilityPageProps } from "../../../pages/[user]/[type]";
+import { AvailabilityTeamPageProps } from "../../../pages/team/[slug]/[type]";
 
 dayjs.extend(utc);
 dayjs.extend(customParseFormat);
 
-const AvailabilityPage = ({ profile, eventType, workingHours }: AvailabilityPageProps) => {
+type Props = AvailabilityTeamPageProps | AvailabilityPageProps;
+
+const AvailabilityPage = ({ profile, eventType, workingHours }: Props) => {
   const router = useRouter();
   const { rescheduleUid } = router.query;
   const { isReady } = useTheme(profile.theme);
@@ -191,7 +194,7 @@ const AvailabilityPage = ({ profile, eventType, workingHours }: AvailabilityPage
                   periodCountCalendarDays={eventType?.periodCountCalendarDays}
                   onDatePicked={changeDate}
                   workingHours={workingHours}
-                  weekStart="Sunday"
+                  weekStart={profile.weekStart || "Sunday"}
                   eventLength={eventType.length}
                   minimumBookingNotice={eventType.minimumBookingNotice}
                 />
@@ -215,7 +218,7 @@ const AvailabilityPage = ({ profile, eventType, workingHours }: AvailabilityPage
               </div>
             </div>
           )}
-          {(!eventType.users[0] || !isBrandingHidden(eventType.users[0])) && <PoweredByCalendso />}
+          {(!eventType.users[0] || !isBrandingHidden(eventType.users[0])) && <PoweredByCal />}
         </main>
       </div>
     </>
