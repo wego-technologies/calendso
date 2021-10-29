@@ -1,35 +1,52 @@
 import { IdProvider } from "@radix-ui/react-id";
 import { Provider } from "next-auth/client";
-import React from "react";
-import { HydrateProps, QueryClient, QueryClientProvider } from "react-query";
-import { Hydrate } from "react-query/hydration";
+import { appWithTranslation } from "next-i18next";
+import type { AppProps as NextAppProps } from "next/app";
+import React, { ComponentProps, ReactNode } from "react";
 
 import DynamicIntercomProvider from "@ee/lib/intercom/providerDynamic";
 
-import { Session } from "@lib/auth";
 import { createTelemetryClient, TelemetryProvider } from "@lib/telemetry";
 
-export const queryClient = new QueryClient();
+import { trpc } from "./trpc";
 
-type AppProviderProps = {
-  pageProps: {
-    session?: Session;
-    dehydratedState?: HydrateProps;
-  };
+const I18nextAdapter = appWithTranslation(({ children }: { children?: ReactNode }) => <>{children}</>);
+
+// Workaround for https://github.com/vercel/next.js/issues/8592
+export type AppProps = NextAppProps & {
+  /** Will be defined only is there was an error */
+  err?: Error;
 };
 
-const AppProviders: React.FC<AppProviderProps> = ({ pageProps, children }) => {
+type AppPropsWithChildren = AppProps & {
+  children: ReactNode;
+};
+
+const CustomI18nextProvider = (props: AppPropsWithChildren) => {
+  const { i18n, locale } = trpc.useQuery(["viewer.i18n"]).data ?? {};
+
+  const passedProps = {
+    ...props,
+    pageProps: {
+      ...props.pageProps,
+      ...i18n,
+    },
+    router: locale ? { locale } : props.router,
+  } as unknown as ComponentProps<typeof I18nextAdapter>;
+  return <I18nextAdapter {...passedProps} />;
+};
+
+const AppProviders = (props: AppPropsWithChildren) => {
+  const session = trpc.useQuery(["viewer.session"]).data;
   return (
     <TelemetryProvider value={createTelemetryClient()}>
-      <QueryClientProvider client={queryClient}>
+      <IdProvider>
         <DynamicIntercomProvider>
-          <Hydrate state={pageProps.dehydratedState}>
-            <IdProvider>
-              <Provider session={pageProps.session}>{children}</Provider>
-            </IdProvider>
-          </Hydrate>
+          <Provider session={session || undefined}>
+            <CustomI18nextProvider {...props}>{props.children}</CustomI18nextProvider>
+          </Provider>
         </DynamicIntercomProvider>
-      </QueryClientProvider>
+      </IdProvider>
     </TelemetryProvider>
   );
 };

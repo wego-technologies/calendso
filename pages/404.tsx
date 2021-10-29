@@ -1,43 +1,45 @@
-import { ChevronRightIcon } from "@heroicons/react/solid";
 import { BookOpenIcon, CheckIcon, DesktopComputerIcon, DocumentTextIcon } from "@heroicons/react/outline";
+import { ChevronRightIcon } from "@heroicons/react/solid";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
 
+import { useLocale } from "@lib/hooks/useLocale";
+
 import { HeadSeo } from "@components/seo/head-seo";
 
-const links = [
-  {
-    title: "Home",
-    description: "Go back to the gatego landing page",
-    icon: DocumentTextIcon,
-    href: "https://gatego.io",
-  },
-  {
-    title: "Dashboard",
-    description: "Go to your gatego dashboard",
-    icon: DesktopComputerIcon,
-    href: "https://api.docs.cal.com",
-  },
-  {
-    title: "Blog",
-    description: "Read our latest news and articles",
-    icon: BookOpenIcon,
-    href: "https://blog.gatego.io",
-  },
-];
-
 export default function Custom404() {
+  const { t } = useLocale();
   const router = useRouter();
   const username = router.asPath.replace("%20", "-");
+  const links = [
+    {
+      title: "Home",
+      description: "Go back to the gatego landing page",
+      icon: DocumentTextIcon,
+      href: "https://gatego.io",
+    },
+    {
+      title: "Dashboard",
+      description: "Go to your gatego dashboard",
+      icon: DesktopComputerIcon,
+      href: "https://api.docs.cal.com",
+    },
+    {
+      title: "Blog",
+      description: "Read our latest news and articles",
+      icon: BookOpenIcon,
+      href: "https://blog.gatego.io",
+    },
+  ];
 
   const isEventType404 = router.asPath.includes("/event-types");
 
   return (
     <>
       <HeadSeo
-        title="404: This page could not be found."
-        description="404: This page could not be found."
+        title={t("404_page_not_found")}
+        description={t("404_page_not_found")}
         nextSeoProps={{
           nofollow: true,
           noindex: true,
@@ -87,7 +89,8 @@ export default function Custom404() {
             <div className="mt-8">
               <Link href="/">
                 <a className="text-base font-medium text-black hover:text-gray-500">
-                  Or go back home<span aria-hidden="true"> &rarr;</span>
+                  {t("or_go_back_home")}
+                  <span aria-hidden="true"> &rarr;</span>
                 </a>
               </Link>
             </div>

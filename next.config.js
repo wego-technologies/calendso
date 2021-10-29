@@ -12,6 +12,7 @@ if (process.env.BASE_URL) {
 if (!process.env.NEXT_PUBLIC_APP_URL) {
   process.env.NEXT_PUBLIC_APP_URL = process.env.BASE_URL;
 }
+process.env.NEXT_PUBLIC_BASE_URL = process.env.BASE_URL;
 
 if (!process.env.EMAIL_FROM) {
   console.warn(
@@ -41,7 +42,19 @@ if (process.env.GOOGLE_API_CREDENTIALS && !validJson(process.env.GOOGLE_API_CRED
   );
 }
 
-module.exports = withTM({
+const plugins = [];
+if (process.env.ANALYZE === "true") {
+  // only load dependency if env `ANALYZE` was set
+  const withBundleAnalyzer = require("@next/bundle-analyzer")({
+    enabled: true,
+  });
+  plugins.push(withBundleAnalyzer);
+}
+
+plugins.push(withTM);
+
+// prettier-ignore
+module.exports = () => plugins.reduce((acc, next) => next(acc), {
   i18n,
   eslint: {
     // This allows production builds to successfully complete even if the project has ESLint errors.
@@ -64,6 +77,11 @@ module.exports = withTM({
       {
         source: "/settings",
         destination: "/settings/profile",
+        permanent: true,
+      },
+      {
+        source: "/bookings",
+        destination: "/bookings/upcoming",
         permanent: true,
       },
     ];
