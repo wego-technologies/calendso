@@ -189,13 +189,13 @@ const BookingPage = (props: BookingPageProps) => {
         <title>
           {rescheduleUid
             ? t("booking_reschedule_confirmation", {
-                eventTypeTitle: props.eventType.title,
-                profileName: props.profile.name,
-              })
+              eventTypeTitle: props.eventType.title,
+              profileName: props.profile.name,
+            })
             : t("booking_confirmation", {
-                eventTypeTitle: props.eventType.title,
-                profileName: props.profile.name,
-              })}{" "}
+              eventTypeTitle: props.eventType.title,
+              profileName: props.profile.name,
+            })}{" "}
           | gatego.cal.com
         </title>
         <link rel="icon" href="/favicon.ico" />
