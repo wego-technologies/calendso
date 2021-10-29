@@ -1,18 +1,30 @@
-import { CalendarIcon, ClockIcon, ExclamationIcon, LocationMarkerIcon } from "@heroicons/react/solid";
+import {
+  CalendarIcon,
+  ClockIcon,
+  CreditCardIcon,
+  ExclamationIcon,
+  LocationMarkerIcon,
+} from "@heroicons/react/solid";
 import { EventTypeCustomInputType } from "@prisma/client";
 import dayjs from "dayjs";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { stringify } from "querystring";
 import { useCallback, useEffect, useState } from "react";
+import { FormattedNumber, IntlProvider } from "react-intl";
 import { ReactMultiEmail } from "react-multi-email";
+
+import { createPaymentLink } from "@ee/lib/stripe/client";
 
 import { asStringOrNull } from "@lib/asStringOrNull";
 import { timeZone } from "@lib/clock";
 import { useLocale } from "@lib/hooks/useLocale";
 import useTheme from "@lib/hooks/useTheme";
 import { LocationType } from "@lib/location";
+import createBooking from "@lib/mutations/bookings/create-booking";
 import { parseZone } from "@lib/parseZone";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@lib/telemetry";
+import { BookingCreateBody } from "@lib/types/booking";
 
 import AvatarGroup from "@components/ui/AvatarGroup";
 import { Button } from "@components/ui/Button";
@@ -88,7 +100,7 @@ const BookingPage = (props: BookingPageProps) => {
         notes += event.target.notes.value;
       }
 
-      const payload = {
+      const payload: BookingCreateBody = {
         start: dayjs(date).format(),
         end: dayjs(date).add(props.eventType.length, "minute").format(),
         name: event.target.name.value,
@@ -96,14 +108,11 @@ const BookingPage = (props: BookingPageProps) => {
         notes: notes,
         guests: guestEmails,
         eventTypeId: props.eventType.id,
-        rescheduleUid: rescheduleUid,
         timeZone: timeZone(),
         language: i18n.language,
       };
-
-      if (router.query.user) {
-        payload.user = router.query.user;
-      }
+      if (typeof rescheduleUid === "string") payload.rescheduleUid = rescheduleUid;
+      if (typeof router.query.user === "string") payload.user = router.query.user;
 
       if (selectedLocation) {
         switch (selectedLocation) {
@@ -125,12 +134,10 @@ const BookingPage = (props: BookingPageProps) => {
         jitsu.track(telemetryEventTypes.bookingConfirmed, collectPageParameters())
       );
 
-      /*const res = await */ fetch("/api/book/event", {
-        body: JSON.stringify(payload),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        method: "POST",
+      const content = await createBooking(payload).catch((e) => {
+        console.error(e.message);
+        setLoading(false);
+        setError(true);
       });
 
       if (content?.id) {
@@ -162,9 +169,12 @@ const BookingPage = (props: BookingPageProps) => {
             absolute: false,
           });
         }
-      }
 
-      await router.push(successUrl);
+        await router.push(successUrl);
+      } else {
+        setLoading(false);
+        setError(true);
+      }
     };
 
     event.preventDefault();
@@ -179,14 +189,14 @@ const BookingPage = (props: BookingPageProps) => {
         <title>
           {rescheduleUid
             ? t("booking_reschedule_confirmation", {
-              eventTypeTitle: props.eventType.title,
-              profileName: props.profile.name,
-            })
+                eventTypeTitle: props.eventType.title,
+                profileName: props.profile.name,
+              })
             : t("booking_confirmation", {
-              eventTypeTitle: props.eventType.title,
-              profileName: props.profile.name,
-            })}{" "}
-          | cal.gatego.io
+                eventTypeTitle: props.eventType.title,
+                profileName: props.profile.name,
+              })}{" "}
+          | gatego.cal.com
         </title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -253,7 +263,7 @@ const BookingPage = (props: BookingPageProps) => {
                         name="name"
                         id="name"
                         required
-                        className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm"
+                        className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-black sm:text-sm"
                         placeholder="John Doe"
                         defaultValue={props.booking ? props.booking.attendees[0].name : ""}
                       />
@@ -272,7 +282,7 @@ const BookingPage = (props: BookingPageProps) => {
                         id="email"
                         inputMode="email"
                         required
-                        className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm"
+                        className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-black sm:text-sm"
                         placeholder="you@example.com"
                         defaultValue={props.booking ? props.booking.attendees[0].email : ""}
                       />
@@ -289,7 +299,7 @@ const BookingPage = (props: BookingPageProps) => {
                             type="radio"
                             required
                             onChange={(e) => setSelectedLocation(e.target.value)}
-                            className="w-4 h-4 mr-2 text-black border-gray-300 location focus:ring-blue-600"
+                            className="w-4 h-4 mr-2 text-black border-gray-300 location focus:ring-black"
                             name="location"
                             value={location.type}
                             checked={selectedLocation === location.type}
@@ -331,7 +341,7 @@ const BookingPage = (props: BookingPageProps) => {
                               id={"custom_" + input.id}
                               required={input.required}
                               rows={3}
-                              className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm"
+                              className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-black sm:text-sm"
                               placeholder={input.placeholder}
                             />
                           )}
@@ -341,7 +351,7 @@ const BookingPage = (props: BookingPageProps) => {
                               name={"custom_" + input.id}
                               id={"custom_" + input.id}
                               required={input.required}
-                              className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm"
+                              className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-black sm:text-sm"
                               placeholder={input.placeholder}
                             />
                           )}
@@ -351,7 +361,7 @@ const BookingPage = (props: BookingPageProps) => {
                               name={"custom_" + input.id}
                               id={"custom_" + input.id}
                               required={input.required}
-                              className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm"
+                              className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-black sm:text-sm"
                               placeholder=""
                             />
                           )}
@@ -361,7 +371,7 @@ const BookingPage = (props: BookingPageProps) => {
                                 type="checkbox"
                                 name={"custom_" + input.id}
                                 id={"custom_" + input.id}
-                                className="w-4 h-4 mr-2 text-black border-gray-300 rounded focus:ring-blue-600"
+                                className="w-4 h-4 mr-2 text-black border-gray-300 rounded focus:ring-black"
                                 placeholder=""
                                 required={input.required}
                               />
@@ -427,18 +437,18 @@ const BookingPage = (props: BookingPageProps) => {
                       name="notes"
                       id="notes"
                       rows={3}
-                      className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm"
+                      className="block w-full border-gray-300 rounded-md shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-black sm:text-sm"
                       placeholder={t("share_additional_notes")}
                       defaultValue={props.booking ? props.booking.description : ""}
                     />
                   </div>
                   <div className="flex items-start space-x-2">
                     {/* TODO: add styling props to <Button variant="" color="" /> and get rid of btn-primary */}
+                    <Button type="submit" loading={loading}>
+                      {rescheduleUid ? t("reschedule") : t("confirm")}
+                    </Button>
                     <Button color="secondary" type="button" onClick={() => router.back()}>
                       {t("cancel")}
-                    </Button>
-                    <Button type="submit" loading={loading}>
-                      {rescheduleUid ? "Reschedule" : "Confirm"}
                     </Button>
                   </div>
                 </form>
