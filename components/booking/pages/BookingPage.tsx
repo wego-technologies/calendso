@@ -63,7 +63,7 @@ const BookingPage = (props: BookingPageProps) => {
     [LocationType.Daily]: "Daily.co Video",
   };
 
-  const bookingHandler = (event) => {
+  const _bookingHandler = (event) => {
     const book = async () => {
       setLoading(true);
       setError(false);
@@ -187,9 +187,9 @@ const BookingPage = (props: BookingPageProps) => {
               profileName: props.profile.name,
             })}{" "}
           | cal.gatego.io
-        </title >
+        </title>
         <link rel="icon" href="/favicon.ico" />
-      </Head >
+      </Head>
 
       <main className="max-w-3xl mx-auto my-0 sm:my-24">
         {isReady && (
@@ -229,26 +229,24 @@ const BookingPage = (props: BookingPageProps) => {
                     </IntlProvider>
                   </p>
                 )}
-                {
-                  selectedLocation === LocationType.InPerson && (
-                    <p className="mb-2 text-gray-500">
-                      <LocationMarkerIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
-                      {locationInfo(selectedLocation).address}
-                    </p>
-                  )
-                }
+                {selectedLocation === LocationType.InPerson && (
+                  <p className="mb-2 text-gray-500">
+                    <LocationMarkerIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
+                    {locationInfo(selectedLocation).address}
+                  </p>
+                )}
                 <p className="mb-4 text-green-500">
                   <CalendarIcon className="inline-block w-4 h-4 mr-1 -mt-1" />
                   {parseZone(date).format(timeFormat + ", dddd DD MMMM YYYY")}
                 </p>
                 <p className="mb-8 text-gray-600 dark:text-white">{props.eventType.description}</p>
-              </div >
+              </div>
               <div className="sm:w-1/2 sm:pl-8 sm:pr-4">
                 <form onSubmit={bookingHandler}>
                   <div className="mb-4">
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-white">
                       {t("your_name")}
-                    </label >
+                    </label>
                     <div className="mt-1">
                       <input
                         type="text"
@@ -260,13 +258,13 @@ const BookingPage = (props: BookingPageProps) => {
                         defaultValue={props.booking ? props.booking.attendees[0].name : ""}
                       />
                     </div>
-                  </div >
+                  </div>
                   <div className="mb-4">
                     <label
                       htmlFor="email"
                       className="block text-sm font-medium text-gray-700 dark:text-white">
                       {t("email_address")}
-                    </label >
+                    </label>
                     <div className="mt-1">
                       <input
                         type="email"
@@ -279,49 +277,43 @@ const BookingPage = (props: BookingPageProps) => {
                         defaultValue={props.booking ? props.booking.attendees[0].email : ""}
                       />
                     </div>
-                  </div >
-                  {
-                    locations.length > 1 && (
-                      <div className="mb-4">
-                        <span className="block text-sm font-medium text-gray-700 dark:text-white">
-                          {t("location")}
-                        </span >
-                        {
-                          locations.map((location) => (
-                            <label key={location.type} className="block">
-                              <input
-                                type="radio"
-                                required
-                                onChange={(e) => setSelectedLocation(e.target.value)}
-                                className="w-4 h-4 mr-2 text-black border-gray-300 location focus:ring-blue-600"
-                                name="location"
-                                value={location.type}
-                                checked={selectedLocation === location.type}
-                              />
-                              <span className="ml-2 text-sm dark:text-gray-500">
-                                {locationLabels[location.type]}
-                              </span>
-                            </label>
-                          ))
-                        }
-                      </div >
-                    )}
-                  {
-                    selectedLocation === LocationType.Phone && (
-                      <div className="mb-4">
-                        <label
-                          htmlFor="phone"
-                          className="block text-sm font-medium text-gray-700 dark:text-white">
-                          {t("phone_number")}
+                  </div>
+                  {locations.length > 1 && (
+                    <div className="mb-4">
+                      <span className="block text-sm font-medium text-gray-700 dark:text-white">
+                        {t("location")}
+                      </span>
+                      {locations.map((location) => (
+                        <label key={location.type} className="block">
+                          <input
+                            type="radio"
+                            required
+                            onChange={(e) => setSelectedLocation(e.target.value)}
+                            className="w-4 h-4 mr-2 text-black border-gray-300 location focus:ring-blue-600"
+                            name="location"
+                            value={location.type}
+                            checked={selectedLocation === location.type}
+                          />
+                          <span className="ml-2 text-sm dark:text-gray-500">
+                            {locationLabels[location.type]}
+                          </span>
                         </label>
-                        <div className="mt-1">
-                          <PhoneInput name="phone" placeholder={t("enter_phone_number")} id="phone" required />
-                        </div>
-                      </div >
-                    )
-                  }
-                  {
-                    props.eventType.customInputs &&
+                      ))}
+                    </div>
+                  )}
+                  {selectedLocation === LocationType.Phone && (
+                    <div className="mb-4">
+                      <label
+                        htmlFor="phone"
+                        className="block text-sm font-medium text-gray-700 dark:text-white">
+                        {t("phone_number")}
+                      </label>
+                      <div className="mt-1">
+                        <PhoneInput name="phone" placeholder={t("enter_phone_number")} id="phone" required />
+                      </div>
+                    </div>
+                  )}
+                  {props.eventType.customInputs &&
                     props.eventType.customInputs
                       .sort((a, b) => a.id - b.id)
                       .map((input) => (
@@ -381,61 +373,56 @@ const BookingPage = (props: BookingPageProps) => {
                             </div>
                           )}
                         </div>
-                      ))
-                  }
-                  {
-                    !props.eventType.disableGuests && (
-                      <div className="mb-4">
-                        {!guestToggle && (
+                      ))}
+                  {!props.eventType.disableGuests && (
+                    <div className="mb-4">
+                      {!guestToggle && (
+                        <label
+                          onClick={toggleGuestEmailInput}
+                          htmlFor="guests"
+                          className="block mb-1 text-sm font-medium text-blue-500 dark:text-white hover:cursor-pointer">
+                          {t("additional_guests")}
+                        </label>
+                      )}
+                      {guestToggle && (
+                        <div>
                           <label
-                            onClick={toggleGuestEmailInput}
                             htmlFor="guests"
-                            className="block mb-1 text-sm font-medium text-blue-500 dark:text-white hover:cursor-pointer">
-                            {t("additional_guests")}
-                          </label >
-                        )
-                        }
-                        {
-                          guestToggle && (
-                            <div>
-                              <label
-                                htmlFor="guests"
-                                className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
-                                {t("guests")}
-                              </label>
-                              <ReactMultiEmail
-                                className="relative"
-                                placeholder="guest@example.com"
-                                emails={guestEmails}
-                                onChange={(_emails: string[]) => {
-                                  setGuestEmails(_emails);
-                                }}
-                                getLabel={(
-                                  email: string,
-                                  index: number,
-                                  removeEmail: (index: number) => void
-                                ) => {
-                                  return (
-                                    <div data-tag key={index}>
-                                      {email}
-                                      <span data-tag-handle onClick={() => removeEmail(index)}>
-                                        ×
-                                      </span>
-                                    </div>
-                                  );
-                                }}
-                              />
-                            </div >
-                          )
-                        }
-                      </div >
-                    )}
+                            className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
+                            {t("guests")}
+                          </label>
+                          <ReactMultiEmail
+                            className="relative"
+                            placeholder="guest@example.com"
+                            emails={guestEmails}
+                            onChange={(_emails: string[]) => {
+                              setGuestEmails(_emails);
+                            }}
+                            getLabel={(
+                              email: string,
+                              index: number,
+                              removeEmail: (index: number) => void
+                            ) => {
+                              return (
+                                <div data-tag key={index}>
+                                  {email}
+                                  <span data-tag-handle onClick={() => removeEmail(index)}>
+                                    ×
+                                  </span>
+                                </div>
+                              );
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="mb-4">
                     <label
                       htmlFor="notes"
                       className="block mb-1 text-sm font-medium text-gray-700 dark:text-white">
                       {t("additional_notes")}
-                    </label >
+                    </label>
                     <textarea
                       name="notes"
                       id="notes"
@@ -444,7 +431,7 @@ const BookingPage = (props: BookingPageProps) => {
                       placeholder={t("share_additional_notes")}
                       defaultValue={props.booking ? props.booking.description : ""}
                     />
-                  </div >
+                  </div>
                   <div className="flex items-start space-x-2">
                     {/* TODO: add styling props to <Button variant="" color="" /> and get rid of btn-primary */}
                     <Button type="submit" loading={loading}>
@@ -456,8 +443,8 @@ const BookingPage = (props: BookingPageProps) => {
                     <Button type="submit" loading={loading}>
                       {rescheduleUid ? "Reschedule" : "Confirm"}
                     </Button>
-                  </div >
-                </form >
+                  </div>
+                </form>
                 {error && (
                   <div className="p-4 mt-2 border-l-4 border-yellow-400 bg-yellow-50">
                     <div className="flex">
@@ -472,12 +459,12 @@ const BookingPage = (props: BookingPageProps) => {
                     </div>
                   </div>
                 )}
-              </div >
-            </div >
-          </div >
+              </div>
+            </div>
+          </div>
         )}
-      </main >
-    </div >
+      </main>
+    </div>
   );
 };
 
