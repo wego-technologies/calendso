@@ -3,7 +3,7 @@ import { EventTypeCustomInputType } from "@prisma/client";
 import dayjs from "dayjs";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ReactMultiEmail } from "react-multi-email";
 
 import { asStringOrNull } from "@lib/asStringOrNull";
@@ -434,9 +434,6 @@ const BookingPage = (props: BookingPageProps) => {
                   </div>
                   <div className="flex items-start space-x-2">
                     {/* TODO: add styling props to <Button variant="" color="" /> and get rid of btn-primary */}
-                    <Button type="submit" loading={loading}>
-                      {rescheduleUid ? t("reschedule") : t("confirm")}
-                    </Button>
                     <Button color="secondary" type="button" onClick={() => router.back()}>
                       {t("cancel")}
                     </Button>
