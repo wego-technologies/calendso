@@ -29,10 +29,13 @@ function getContrastingTextColor(bgColor: string | null): string {
   return whiteContrastRatio + 1.9 > blackContrastRatio ? "#ffffff" : "#292929";
 }
 
-const BrandColor = ({ val = "#292929" }: { val: string | undefined | null }) => {
+const BrandColor = ({ val = "#00a1d3" }: { val: string | undefined | null }) => {
   useEffect(() => {
-    document.documentElement.style.setProperty("--brand-color", val);
-    document.documentElement.style.setProperty("--brand-text-color", getContrastingTextColor(val));
+    document.documentElement.style.setProperty("--brand-color", val ?? "#00a1d3");
+    document.documentElement.style.setProperty(
+      "--brand-text-color",
+      getContrastingTextColor(val ?? "#00a1d3")
+    );
   }, [val]);
   return null;
 };

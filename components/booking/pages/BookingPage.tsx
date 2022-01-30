@@ -252,21 +252,21 @@ const BookingPage = (props: BookingPageProps) => {
         <title>
           {rescheduleUid
             ? t("booking_reschedule_confirmation", {
-              eventTypeTitle: props.eventType.title,
-              profileName: props.profile.name,
-            })
+                eventTypeTitle: props.eventType.title,
+                profileName: props.profile.name,
+              })
             : t("booking_confirmation", {
-              eventTypeTitle: props.eventType.title,
-              profileName: props.profile.name,
-            })}{" "}
+                eventTypeTitle: props.eventType.title,
+                profileName: props.profile.name,
+              })}{" "}
           | gatego.cal.com
         </title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <CustomBranding val={props.profile.brandColor} />
-      <main className="max-w-3xl mx-auto my-0 rounded-sm sm:my-24 sm:border sm:dark:border-gray-600">
+      <main className="max-w-3xl mx-auto my-0 rounded-lg sm:my-24 sm:border sm:dark:border-gray-600">
         {isReady && (
-          <div className="overflow-hidden bg-white border border-gray-200 dark:bg-neutral-900 dark:border-0 sm:rounded-sm">
+          <div className="overflow-hidden bg-white border border-gray-200 dark:bg-neutral-900 dark:border-0 sm:rounded-lg">
             <div className="px-4 py-5 sm:flex sm:p-4">
               <div className="sm:w-1/2 sm:border-r sm:dark:border-gray-800">
                 <AvatarGroup
@@ -327,7 +327,7 @@ const BookingPage = (props: BookingPageProps) => {
                         name="name"
                         id="name"
                         required
-                        className="block w-full border-gray-300 rounded-sm shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-brand sm:text-sm"
+                        className="block w-full border-gray-300 rounded-lg shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-brand focus:border-brand sm:text-sm"
                         placeholder="John Doe"
                       />
                     </div>
@@ -342,7 +342,7 @@ const BookingPage = (props: BookingPageProps) => {
                       <EmailInput
                         {...bookingForm.register("email")}
                         required
-                        className="block w-full border-gray-300 rounded-sm shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-brand sm:text-sm"
+                        className="block w-full border-gray-300 rounded-lg shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-brand focus:border-brand sm:text-sm"
                         placeholder="you@example.com"
                       />
                     </div>
@@ -356,7 +356,7 @@ const BookingPage = (props: BookingPageProps) => {
                         <label key={i} className="block">
                           <input
                             type="radio"
-                            className="w-4 h-4 mr-2 text-black border-gray-300 location focus:ring-black"
+                            className="w-4 h-4 mr-2 text-black border-gray-300 location focus:ring-brand"
                             {...bookingForm.register("locationType", { required: true })}
                             value={location.type}
                             defaultChecked={selectedLocation === location.type}
@@ -398,7 +398,7 @@ const BookingPage = (props: BookingPageProps) => {
                             })}
                             id={"custom_" + input.id}
                             rows={3}
-                            className="block w-full border-gray-300 rounded-sm shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-brand sm:text-sm"
+                            className="block w-full border-gray-300 rounded-lg shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-brand focus:border-brand sm:text-sm"
                             placeholder={input.placeholder}
                           />
                         )}
@@ -409,7 +409,7 @@ const BookingPage = (props: BookingPageProps) => {
                               required: input.required,
                             })}
                             id={"custom_" + input.id}
-                            className="block w-full border-gray-300 rounded-sm shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-brand sm:text-sm"
+                            className="block w-full border-gray-300 rounded-lg shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-brand focus:border-brand sm:text-sm"
                             placeholder={input.placeholder}
                           />
                         )}
@@ -420,7 +420,7 @@ const BookingPage = (props: BookingPageProps) => {
                               required: input.required,
                             })}
                             id={"custom_" + input.id}
-                            className="block w-full border-gray-300 rounded-sm shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-brand sm:text-sm"
+                            className="block w-full border-gray-300 rounded-lg shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-brand focus:border-brand sm:text-sm"
                             placeholder=""
                           />
                         )}
@@ -432,7 +432,7 @@ const BookingPage = (props: BookingPageProps) => {
                                 required: input.required,
                               })}
                               id={"custom_" + input.id}
-                              className="w-4 h-4 mr-2 text-black border-gray-300 rounded focus:ring-black"
+                              className="w-4 h-4 mr-2 text-black border-gray-300 rounded focus:ring-brand checked:focus:bg-brand checked:bg-brand checked:hover:bg-brand"
                               placeholder=""
                             />
                             <label
@@ -502,7 +502,7 @@ const BookingPage = (props: BookingPageProps) => {
                       {...bookingForm.register("notes")}
                       id="notes"
                       rows={3}
-                      className="block w-full border-gray-300 rounded-sm shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-brand sm:text-sm"
+                      className="block w-full border-gray-300 rounded-lg shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-brand focus:border-brand sm:text-sm"
                       placeholder={t("share_additional_notes")}
                     />
                   </div>

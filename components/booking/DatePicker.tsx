@@ -206,7 +206,7 @@ function DatePicker({
                 onClick={() => onDatePicked(browsingDate.date(day.date))}
                 disabled={day.disabled}
                 className={classNames(
-                  "absolute w-full top-0 left-0 right-0 bottom-0 rounded-sm text-center mx-auto",
+                  "absolute w-full top-0 left-0 right-0 bottom-0 rounded-lg text-center mx-auto",
                   "hover:border hover:border-brand dark:hover:border-white",
                   day.disabled ? "text-gray-400 font-light hover:border-0 cursor-default" : "font-medium",
                   date && date.isSame(browsingDate.date(day.date), "day")
