@@ -26,7 +26,7 @@ function getContrastingTextColor(bgColor: string | null): string {
   const rgb = hexToRGB(bgColor);
   const whiteContrastRatio = computeContrastRatio(rgb, [255, 255, 255]);
   const blackContrastRatio = computeContrastRatio(rgb, [41, 41, 41]); //#292929
-  return whiteContrastRatio > blackContrastRatio ? "#ffffff" : "#292929";
+  return whiteContrastRatio + 1.9 > blackContrastRatio ? "#ffffff" : "#292929";
 }
 
 const BrandColor = ({ val = "#292929" }: { val: string | undefined | null }) => {
