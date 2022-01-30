@@ -7,8 +7,14 @@ datasource db {
 }
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["selectRelationCount"]
+  provider = "prisma-client-js"
+}
+
+generator zod {
+  provider      = "zod-prisma"
+  output        = "./zod"
+  imports       = "./zod-utils"
+  relationModel = "default"
 }
 
 enum SchedulingType {
@@ -16,11 +22,21 @@ enum SchedulingType {
   COLLECTIVE   @map("collective")
 }
 
+enum PeriodType {
+  UNLIMITED  @map("unlimited")
+  ROLLING    @map("rolling")
+  RANGE      @map("range")
+}
+
 model EventType {
   id                      Int                    @id @default(autoincrement())
+  /// @zod.nonempty()
   title                   String
+  /// @zod.custom(imports.eventTypeSlug)
   slug                    String
   description             String?
+  position                Int                    @default(0)
+  /// @zod.custom(imports.eventTypeLocations)
   locations               Json?
   length                  Int
   hidden                  Boolean                @default(false)
@@ -30,10 +46,11 @@ model EventType {
   teamId                  Int?
   bookings                Booking[]
   availability            Availability[]
+  destinationCalendar     DestinationCalendar?
   eventName               String?
   customInputs            EventTypeCustomInput[]
   timeZone                String?
-  periodType              String                 @default("unlimited") // unlimited | rolling | range
+  periodType              PeriodType             @default(UNLIMITED)
   periodStartDate         DateTime?
   periodEndDate           DateTime?
   periodDays              Int?
@@ -45,6 +62,7 @@ model EventType {
   Schedule                Schedule[]
   price                   Int                    @default(0)
   currency                String                 @default("usd")
+  slotInterval            Int?
 
   @@unique([userId, slug])
 }
@@ -53,7 +71,7 @@ model Credential {
   id     Int    @id @default(autoincrement())
   type   String
   key    Json
-  user   User?  @relation(fields: [userId], references: [id])
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int?
 }
 
@@ -63,36 +81,65 @@ enum UserPlan {
   PRO
 }
 
+enum IdentityProvider {
+  CAL
+  GOOGLE
+  SAML
+}
+
+model DestinationCalendar {
+  id          Int        @id @default(autoincrement())
+  integration String
+  externalId  String
+  user        User?      @relation(fields: [userId], references: [id])
+  userId      Int?       @unique
+  booking     Booking?   @relation(fields: [bookingId], references: [id])
+  bookingId   Int?       @unique
+  eventType   EventType? @relation(fields: [eventTypeId], references: [id])
+  eventTypeId Int?       @unique
+}
+
 model User {
-  id                  Int                @id @default(autoincrement())
-  username            String?            @unique
+  id                  Int                  @id @default(autoincrement())
+  username            String?              @unique
   name                String?
-  email               String             @unique
+  /// @zod.email()
+  email               String               @unique
   emailVerified       DateTime?
   password            String?
   bio                 String?
   avatar              String?
-  timeZone            String             @default("Europe/London")
-  weekStart           String             @default("Sunday")
-  startTime           Int                @default(0)
-  endTime             Int                @default(1440)
-  bufferTime          Int                @default(0)
-  hideBranding        Boolean            @default(false)
+  timeZone            String               @default("Europe/London")
+  weekStart           String               @default("Sunday")
+  // DEPRECATED - TO BE REMOVED
+  startTime           Int                  @default(0)
+  endTime             Int                  @default(1440)
+  // </DEPRECATED>
+  bufferTime          Int                  @default(0)
+  hideBranding        Boolean              @default(false)
   theme               String?
-  createdDate         DateTime           @default(now()) @map(name: "created")
-  eventTypes          EventType[]        @relation("user_eventtype")
+  createdDate         DateTime             @default(now()) @map(name: "created")
+  eventTypes          EventType[]          @relation("user_eventtype")
   credentials         Credential[]
   teams               Membership[]
   bookings            Booking[]
   availability        Availability[]
   selectedCalendars   SelectedCalendar[]
-  completedOnboarding Boolean            @default(false)
+  completedOnboarding Boolean              @default(false)
   locale              String?
   twoFactorSecret     String?
-  twoFactorEnabled    Boolean            @default(false)
-  plan                UserPlan           @default(PRO)
+  twoFactorEnabled    Boolean              @default(false)
+  identityProvider    IdentityProvider     @default(CAL)
+  identityProviderId  String?
+  invitedTo           Int?
+  plan                UserPlan             @default(TRIAL)
   Schedule            Schedule[]
   webhooks            Webhook[]
+  brandColor          String               @default("#292929")
+  // the location where the events will end up
+  destinationCalendar DestinationCalendar?
+  away                Boolean              @default(false)
+  metadata            Json?
 
   @@map(name: "users")
 }
@@ -110,6 +157,7 @@ model Team {
 
 enum MembershipRole {
   MEMBER
+  ADMIN
   OWNER
 }
 
@@ -119,7 +167,7 @@ model Membership {
   accepted Boolean        @default(false)
   role     MembershipRole
   team     Team           @relation(fields: [teamId], references: [id])
-  user     User           @relation(fields: [userId], references: [id])
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([userId, teamId])
 }
@@ -151,6 +199,7 @@ model Attendee {
   email     String
   name      String
   timeZone  String
+  locale    String?  @default("en")
   booking   Booking? @relation(fields: [bookingId], references: [id])
   bookingId Int?
 }
@@ -171,36 +220,34 @@ model DailyEventReference {
 }
 
 model Booking {
-  id          Int                @id @default(autoincrement())
-  uid         String             @unique
-  user        User?              @relation(fields: [userId], references: [id])
-  userId      Int?
-  references  BookingReference[]
-  eventType   EventType?         @relation(fields: [eventTypeId], references: [id])
-  eventTypeId Int?
-
-  title       String
-  description String?
-  startTime   DateTime
-  endTime     DateTime
-
-  attendees Attendee[]
-  location  String?
-
-  dailyRef DailyEventReference?
-
-  createdAt DateTime      @default(now())
-  updatedAt DateTime?
-  confirmed Boolean       @default(true)
-  rejected  Boolean       @default(false)
-  status    BookingStatus @default(ACCEPTED)
-  paid      Boolean       @default(false)
-  payment   Payment[]
+  id                  Int                  @id @default(autoincrement())
+  uid                 String               @unique
+  user                User?                @relation(fields: [userId], references: [id])
+  userId              Int?
+  references          BookingReference[]
+  eventType           EventType?           @relation(fields: [eventTypeId], references: [id])
+  eventTypeId         Int?
+  title               String
+  description         String?
+  startTime           DateTime
+  endTime             DateTime
+  attendees           Attendee[]
+  location            String?
+  dailyRef            DailyEventReference?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime?
+  confirmed           Boolean              @default(true)
+  rejected            Boolean              @default(false)
+  status              BookingStatus        @default(ACCEPTED)
+  paid                Boolean              @default(false)
+  payment             Payment[]
+  destinationCalendar DestinationCalendar?
+  cancellationReason  String?
 }
 
 model Schedule {
   id            Int        @id @default(autoincrement())
-  user          User?      @relation(fields: [userId], references: [id])
+  user          User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId        Int?
   eventType     EventType? @relation(fields: [eventTypeId], references: [id])
   eventTypeId   Int?
@@ -211,18 +258,18 @@ model Schedule {
 model Availability {
   id          Int        @id @default(autoincrement())
   label       String?
-  user        User?      @relation(fields: [userId], references: [id])
+  user        User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int?
   eventType   EventType? @relation(fields: [eventTypeId], references: [id])
   eventTypeId Int?
   days        Int[]
-  startTime   Int
-  endTime     Int
+  startTime   DateTime   @db.Time
+  endTime     DateTime   @db.Time
   date        DateTime?  @db.Date
 }
 
 model SelectedCalendar {
-  user        User   @relation(fields: [userId], references: [id])
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
   integration String
   externalId  String
@@ -293,11 +340,12 @@ enum WebhookTriggerEvents {
 }
 
 model Webhook {
-  id            String                 @id @unique
-  userId        Int
-  subscriberUrl String
-  createdAt     DateTime               @default(now())
-  active        Boolean                @default(true)
-  eventTriggers WebhookTriggerEvents[]
-  user          User                   @relation(fields: [userId], references: [id])
+  id              String                 @id @unique
+  userId          Int
+  subscriberUrl   String
+  payloadTemplate String?
+  createdAt       DateTime               @default(now())
+  active          Boolean                @default(true)
+  eventTriggers   WebhookTriggerEvents[]
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -18,8 +18,12 @@ import { isBrandingHidden } from "@lib/isBrandingHidden";
 import prisma from "@lib/prisma";
 import { inferSSRProps } from "@lib/types/inferSSRProps";
 
+import CustomBranding from "@components/CustomBranding";
+import { EmailInput } from "@components/form/fields";
 import { HeadSeo } from "@components/seo/head-seo";
 import Button from "@components/ui/Button";
+
+import { ssrInit } from "@server/lib/ssr";
 
 dayjs.extend(utc);
 dayjs.extend(toArray);
@@ -39,7 +43,17 @@ export default function Success(props: inferSSRProps<typeof getServerSideProps>)
     setIs24h(!!localStorage.getItem("timeOption.is24hClock"));
   }, []);
 
-  const eventName = getEventName(name, props.eventType.title, props.eventType.eventName);
+  const attendeeName = typeof name === "string" ? name : "Nameless";
+
+  const eventNameObject = {
+    attendeeName,
+    eventType: props.eventType.title,
+    eventName: props.eventType.eventName,
+    host: props.profile.name || "Nameless",
+    t,
+  };
+
+  const eventName = getEventName(eventNameObject);
 
   function eventLink(): string {
     const optional: { location?: string } = {};
@@ -50,7 +64,7 @@ export default function Success(props: inferSSRProps<typeof getServerSideProps>)
     const event = createEvent({
       start: [
         date.toDate().getUTCFullYear(),
-        date.toDate().getUTCMonth(),
+        (date.toDate().getUTCMonth() as number) + 1,
         date.toDate().getUTCDate(),
         date.toDate().getUTCHours(),
         date.toDate().getUTCMinutes(),
@@ -74,11 +88,12 @@ export default function Success(props: inferSSRProps<typeof getServerSideProps>)
 
   return (
     (isReady && (
-      <div className="h-screen bg-neutral-50 dark:bg-neutral-900" data-testid="success-page">
+      <div className="h-screen bg-neutral-100 dark:bg-neutral-900" data-testid="success-page">
         <HeadSeo
           title={needsConfirmation ? t("booking_submitted") : t("booking_confirmed")}
           description={needsConfirmation ? t("booking_submitted") : t("booking_confirmed")}
         />
+        <CustomBranding val={props.profile.brandColor} />
         <main className="max-w-3xl py-24 mx-auto">
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -133,7 +148,7 @@ export default function Success(props: inferSSRProps<typeof getServerSideProps>)
                     </div>
                   </div>
                   {!needsConfirmation && (
-                    <div className="flex pt-2 pb-4 mt-5 text-center border-b sm:mt-0 sm:pt-4">
+                    <div className="flex pt-2 pb-4 mt-5 text-center border-b dark:border-gray-900 sm:mt-0 sm:pt-4">
                       <span className="flex self-center mr-2 font-medium text-gray-700 dark:text-gray-50">
                         {t("add_to_calendar")}
                       </span>
@@ -239,13 +254,11 @@ export default function Success(props: inferSSRProps<typeof getServerSideProps>)
                           router.push(`https://cal.com/signup?email=` + (e as any).target.email.value);
                         }}
                         className="flex mt-4">
-                        <input
-                          type="email"
+                        <EmailInput
                           name="email"
                           id="email"
-                          inputMode="email"
                           defaultValue={router.query.email}
-                          className="block w-full text-gray-600 border-gray-300 shadow-sm dark:bg-black dark:text-white dark:border-gray-900 focus:ring-black focus:border-black sm:text-sm"
+                          className="block w-full text-gray-600 border-gray-300 shadow-sm dark:bg-brand dark:text-brandcontrast dark:border-gray-900 focus:ring-black focus:border-brand sm:text-sm"
                           placeholder="rick.astley@cal.com"
                         />
                         <Button type="submit" className="min-w-max" color="primary">
@@ -266,6 +279,7 @@ export default function Success(props: inferSSRProps<typeof getServerSideProps>)
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const ssr = await ssrInit(context);
   const typeId = parseInt(asStringOrNull(context.query.type) ?? "");
 
   if (isNaN(typeId)) {
@@ -292,6 +306,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           hideBranding: true,
           plan: true,
           theme: true,
+          brandColor: true,
         },
       },
       team: {
@@ -319,6 +334,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         hideBranding: true,
         plan: true,
         theme: true,
+        brandColor: true,
       },
     });
     if (user) {
@@ -335,6 +351,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const profile = {
     name: eventType.team?.name || eventType.users[0]?.name || null,
     theme: (!eventType.team?.name && eventType.users[0]?.theme) || null,
+    brandColor: eventType.team ? null : eventType.users[0].brandColor,
   };
 
   return {
@@ -342,6 +359,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       hideBranding: eventType.team ? eventType.team.hideBranding : isBrandingHidden(eventType.users[0]),
       profile,
       eventType,
+      trpcState: ssr.dehydrate(),
     },
   };
 }

@@ -1,8 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { getSession } from "@lib/auth";
+import { BASE_URL } from "@lib/config/constants";
 
 import prisma from "../../../../lib/prisma";
+import { decodeOAuthState } from "../utils";
 
 const scopes = ["offline_access", "Calendars.Read", "Calendars.ReadWrite"];
 
@@ -11,23 +13,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Check that user is authenticated
   const session = await getSession({ req: req });
-  if (!session) {
+  if (!session?.user?.id) {
     res.status(401).json({ message: "You must be logged in to do this" });
     return;
   }
+  if (typeof code !== "string") {
+    res.status(400).json({ message: "No code returned" });
+    return;
+  }
 
-  const toUrlEncoded = (payload) =>
+  const toUrlEncoded = (payload: Record<string, string>) =>
     Object.keys(payload)
       .map((key) => key + "=" + encodeURIComponent(payload[key]))
       .join("&");
 
   const body = toUrlEncoded({
-    client_id: process.env.MS_GRAPH_CLIENT_ID,
+    client_id: process.env.MS_GRAPH_CLIENT_ID!,
     grant_type: "authorization_code",
     code,
     scope: scopes.join(" "),
-    redirect_uri: process.env.BASE_URL + "/api/integrations/office365calendar/callback",
-    client_secret: process.env.MS_GRAPH_CLIENT_SECRET,
+    redirect_uri: BASE_URL + "/api/integrations/office365calendar/callback",
+    client_secret: process.env.MS_GRAPH_CLIENT_SECRET!,
   });
 
   const response = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
@@ -62,5 +68,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     },
   });
 
-  return res.redirect("/integrations");
+  const state = decodeOAuthState(req);
+  return res.redirect(state?.returnTo ?? "/integrations");
 }

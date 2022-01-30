@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const withTM = require("next-transpile-modules")(["react-timezone-select"]);
+const withTM = require("@vercel/edge-functions-ui/transpile")(["react-timezone-select"]);
 const { i18n } = require("./next-i18next.config");
 
 // So we can test deploy previews preview
@@ -71,6 +71,14 @@ module.exports = () => plugins.reduce((acc, next) => next(acc), {
     };
 
     return config;
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/:user/avatar.png",
+        destination: "/api/user/avatar?username=:user",
+      },
+    ]
   },
   async redirects() {
     return [

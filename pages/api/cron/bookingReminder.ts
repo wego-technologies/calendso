@@ -2,8 +2,8 @@ import { ReminderType } from "@prisma/client";
 import dayjs from "dayjs";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { CalendarEvent } from "@lib/calendarClient";
-import EventOrganizerRequestReminderMail from "@lib/emails/EventOrganizerRequestReminderMail";
+import { sendOrganizerRequestReminderEmail } from "@lib/emails/email-manager";
+import { CalendarEvent } from "@lib/integrations/calendar/interfaces/Calendar";
 import prisma from "@lib/prisma";
 
 import { getTranslation } from "@server/lib/i18n";
@@ -44,10 +44,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             username: true,
             locale: true,
             timeZone: true,
+            destinationCalendar: true,
           },
         },
         id: true,
         uid: true,
+        destinationCalendar: true,
       },
     });
 
@@ -71,7 +73,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         continue;
       }
 
-      const t = await getTranslation(user.locale ?? "en", "common");
+      const tOrganizer = await getTranslation(user.locale ?? "en", "common");
+
+      const attendeesListPromises = booking.attendees.map(async (attendee) => {
+        return {
+          name: attendee.name,
+          email: attendee.email,
+          timeZone: attendee.timeZone,
+          language: {
+            translate: await getTranslation(attendee.locale ?? "en", "common"),
+            locale: attendee.locale ?? "en",
+          },
+        };
+      });
+
+      const attendeesList = await Promise.all(attendeesListPromises);
 
       const evt: CalendarEvent = {
         type: booking.title,
@@ -84,13 +100,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email: user.email,
           name,
           timeZone: user.timeZone,
+          language: { translate: tOrganizer, locale: user.locale ?? "en" },
         },
-        attendees: booking.attendees,
+        attendees: attendeesList,
         uid: booking.uid,
-        language: t,
+        destinationCalendar: booking.destinationCalendar || user.destinationCalendar,
       };
 
-      await new EventOrganizerRequestReminderMail(evt).sendEmail();
+      await sendOrganizerRequestReminderEmail(evt);
+
       await prisma.reminderMail.create({
         data: {
           referenceId: booking.id,

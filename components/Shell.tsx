@@ -1,20 +1,24 @@
 import { SelectorIcon } from "@heroicons/react/outline";
 import {
   CalendarIcon,
+  ArrowLeftIcon,
   ClockIcon,
   CogIcon,
   ExternalLinkIcon,
   LinkIcon,
   LogoutIcon,
   PuzzleIcon,
+  MoonIcon,
+  MapIcon,
 } from "@heroicons/react/solid";
-import { signOut, useSession } from "next-auth/client";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { ReactNode, useEffect } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 
 import LicenseBanner from "@ee/components/LicenseBanner";
+import TrialBanner from "@ee/components/TrialBanner";
 import HelpMenuItemDynamic from "@ee/lib/intercom/HelpMenuItemDynamic";
 
 import classNames from "@lib/classNames";
@@ -23,9 +27,9 @@ import { useLocale } from "@lib/hooks/useLocale";
 import { collectPageParameters, telemetryEventTypes, useTelemetry } from "@lib/telemetry";
 import { trpc } from "@lib/trpc";
 
+import CustomBranding from "@components/CustomBranding";
 import Loader from "@components/Loader";
 import { HeadSeo } from "@components/seo/head-seo";
-import Avatar from "@components/ui/Avatar";
 import Dropdown, {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -35,17 +39,22 @@ import Dropdown, {
 
 import { useViewerI18n } from "./I18nLanguageHandler";
 import Logo from "./Logo";
+import Button from "./ui/Button";
 
-function useMeQuery() {
-  const meQuery = trpc.useQuery(["viewer.me"]);
+export function useMeQuery() {
+  const meQuery = trpc.useQuery(["viewer.me"], {
+    retry(failureCount) {
+      return failureCount > 3;
+    },
+  });
 
   return meQuery;
 }
 
 function useRedirectToLoginIfUnauthenticated() {
-  const [session, loading] = useSession();
+  const { data: session, status } = useSession();
+  const loading = status === "loading";
   const router = useRouter();
-  const query = useMeQuery();
 
   useEffect(() => {
     if (!loading && !session) {
@@ -56,28 +65,36 @@ function useRedirectToLoginIfUnauthenticated() {
         },
       });
     }
-  }, [loading, session, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, session]);
 
-  if (query.status !== "loading" && !query.data) {
-    router.replace("/auth/login");
-  }
+  return {
+    loading: loading && !session,
+  };
 }
 
 function useRedirectToOnboardingIfNeeded() {
-  const [session, loading] = useSession();
   const router = useRouter();
   const query = useMeQuery();
   const user = query.data;
 
+  const [isRedirectingToOnboarding, setRedirecting] = useState(false);
   useEffect(() => {
-    if (!loading && user) {
-      if (shouldShowOnboarding(user)) {
-        router.replace({
-          pathname: "/getting-started",
-        });
-      }
+    if (user && shouldShowOnboarding(user)) {
+      setRedirecting(true);
     }
-  }, [loading, session, router, user]);
+  }, [router, user]);
+  useEffect(() => {
+    if (isRedirectingToOnboarding) {
+      router.replace({
+        pathname: "/getting-started",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRedirectingToOnboarding]);
+  return {
+    isRedirectingToOnboarding,
+  };
 }
 
 export function ShellSubHeading(props: {
@@ -89,12 +106,12 @@ export function ShellSubHeading(props: {
   return (
     <div className={classNames("block sm:flex justify-between mb-3", props.className)}>
       <div>
-        <h2 className="flex items-center content-center space-x-2 text-base font-bold text-gray-900 leading-6">
+        <h2 className="flex items-center content-center space-x-2 text-base font-bold leading-6 text-gray-900">
           {props.title}
         </h2>
         {props.subtitle && <p className="mr-4 text-sm text-neutral-500">{props.subtitle}</p>}
       </div>
-      {props.actions && <div className="flex-shrink-0 mb-4">{props.actions}</div>}
+      {props.actions && <div className="flex-shrink-0">{props.actions}</div>}
     </div>
   );
 }
@@ -106,11 +123,15 @@ export default function Shell(props: {
   subtitle?: ReactNode;
   children: ReactNode;
   CTA?: ReactNode;
+  HeadingLeftIcon?: ReactNode;
+  backPath?: string; // renders back button to specified path
+  // use when content needs to expand with flex
+  flexChildrenContainer?: boolean;
 }) {
   const { t } = useLocale();
   const router = useRouter();
-  useRedirectToLoginIfUnauthenticated();
-  useRedirectToOnboardingIfNeeded();
+  const { loading } = useRedirectToLoginIfUnauthenticated();
+  const { isRedirectingToOnboarding } = useRedirectToOnboardingIfNeeded();
 
   const telemetry = useTelemetry();
 
@@ -124,13 +145,13 @@ export default function Shell(props: {
     {
       name: t("bookings"),
       href: "/bookings/upcoming",
-      icon: ClockIcon,
+      icon: CalendarIcon,
       current: router.asPath.startsWith("/bookings"),
     },
     {
       name: t("availability"),
       href: "/availability",
-      icon: CalendarIcon,
+      icon: ClockIcon,
       current: router.asPath.startsWith("/availability"),
     },
     {
@@ -155,18 +176,22 @@ export default function Shell(props: {
 
   const pageTitle = typeof props.heading === "string" ? props.heading : props.title;
 
+  const query = useMeQuery();
+  const user = query.data;
+
   const i18n = useViewerI18n();
 
-  if (i18n.status === "loading") {
+  if (i18n.status === "loading" || isRedirectingToOnboarding || loading) {
     // show spinner whilst i18n is loading to avoid language flicker
     return (
-      <div className="z-50 absolute w-full h-screen bg-gray-50 flex items-center">
+      <div className="absolute z-50 flex items-center w-full h-screen bg-gray-50">
         <Loader />
       </div>
     );
   }
   return (
     <>
+      <CustomBranding val={user?.brandColor} />
       <HeadSeo
         title={pageTitle ?? "Cal.com"}
         description={props.subtitle ? props.subtitle?.toString() : ""}
@@ -179,17 +204,23 @@ export default function Shell(props: {
         <Toaster position="bottom-right" />
       </div>
 
-      <div className="flex h-screen overflow-hidden bg-gray-100">
-        <div className="hidden md:flex md:flex-shrink-0">
-          <div className="flex flex-col w-56">
+      <div className="flex h-screen overflow-hidden bg-gray-100" data-testid="dashboard-shell">
+        <div className="hidden md:flex lg:flex-shrink-0">
+          <div className="flex flex-col w-14 lg:w-56">
             <div className="flex flex-col flex-1 h-0 bg-white border-r border-gray-200">
-              <div className="flex flex-col flex-1 pt-5 pb-4 overflow-y-auto">
+              <div className="flex flex-col flex-1 pt-3 pb-4 overflow-y-auto lg:pt-5">
                 <Link href="/event-types">
-                  <a className="px-4">
+                  <a className="px-4 md:hidden lg:inline">
                     <Logo small />
                   </a>
                 </Link>
-                <nav className="flex-1 px-2 mt-5 space-y-1 bg-white">
+                {/* logo icon for tablet */}
+                <Link href="/event-types">
+                  <a className="md:inline lg:hidden">
+                    <Logo small icon />
+                  </a>
+                </Link>
+                <nav className="flex-1 px-2 mt-2 space-y-1 bg-white lg:mt-5">
                   {navigation.map((item) => (
                     <Link key={item.name} href={item.href}>
                       <a
@@ -208,21 +239,31 @@ export default function Shell(props: {
                           )}
                           aria-hidden="true"
                         />
-                        {item.name}
+                        <span className="hidden lg:inline">{item.name}</span>
                       </a>
                     </Link>
                   ))}
                 </nav>
               </div>
-              <div className="p-2 pt-2 pr-2 hover:bg-gray-100 rounded-sm m-2">
-                <UserDropdown />
+              <TrialBanner />
+              <div className="p-2 pt-2 pr-2 m-2 rounded-sm hover:bg-gray-100">
+                <span className="hidden lg:inline">
+                  <UserDropdown />
+                </span>
+                <span className="hidden md:inline lg:hidden">
+                  <UserDropdown small />
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="flex flex-col flex-1 w-0 overflow-hidden">
-          <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none max-w-[1700px]">
+          <main
+            className={classNames(
+              "flex-1 relative z-0 overflow-y-auto focus:outline-none max-w-[1700px]",
+              props.flexChildrenContainer && "flex flex-col"
+            )}>
             {/* show top navigation for md and smaller (tablet and phones) */}
             <nav className="flex items-center justify-between p-4 bg-white border-b border-gray-200 md:hidden">
               <Link href="/event-types">
@@ -242,9 +283,25 @@ export default function Shell(props: {
                 <UserDropdown small />
               </div>
             </nav>
-            <div className={classNames(props.centered && "md:max-w-5xl mx-auto", "py-8")}>
+            <div
+              className={classNames(
+                props.centered && "md:max-w-5xl mx-auto",
+                props.flexChildrenContainer && "flex flex-col flex-1",
+                "py-8"
+              )}>
+              {!!props.backPath && (
+                <div className="mx-3 mb-8 sm:mx-8">
+                  <Button
+                    onClick={() => router.push(props.backPath as string)}
+                    StartIcon={ArrowLeftIcon}
+                    color="secondary">
+                    Back
+                  </Button>
+                </div>
+              )}
               <div className="block sm:flex justify-between px-4 sm:px-6 md:px-8 min-h-[80px]">
-                <div className="w-full mb-10">
+                {props.HeadingLeftIcon && <div className="mr-4">{props.HeadingLeftIcon}</div>}
+                <div className="w-full mb-8">
                   <h1 className="mb-1 text-xl font-bold tracking-wide text-gray-900 font-cal">
                     {props.heading}
                   </h1>
@@ -252,7 +309,13 @@ export default function Shell(props: {
                 </div>
                 <div className="flex-shrink-0 mb-4">{props.CTA}</div>
               </div>
-              <div className="px-4 sm:px-6 md:px-8">{props.children}</div>
+              <div
+                className={classNames(
+                  "px-4 sm:px-6 md:px-8",
+                  props.flexChildrenContainer && "flex flex-col flex-1"
+                )}>
+                {props.children}
+              </div>
               {/* show bottom navigation for md and smaller (tablet and phones) */}
               <nav className="fixed bottom-0 flex w-full bg-white shadow bottom-nav md:hidden">
                 {/* note(PeerRich): using flatMap instead of map to remove settings from bottom nav */}
@@ -297,40 +360,89 @@ function UserDropdown({ small }: { small?: boolean }) {
   const { t } = useLocale();
   const query = useMeQuery();
   const user = query.data;
+  const mutation = trpc.useMutation("viewer.away", {
+    onSettled() {
+      utils.invalidateQueries("viewer.me");
+    },
+  });
+  const utils = trpc.useContext();
 
-  return user ? (
+  return (
     <Dropdown>
       <DropdownMenuTrigger asChild>
-        <div className="flex items-center space-x-2 cursor-pointer group">
-          <Avatar
-            imageSrc={user.avatar}
-            alt={user.username}
-            className={classNames(small ? "w-8 h-8" : "w-10 h-10", "bg-gray-300 rounded-full flex-shrink-0")}
-          />
+        <div className="flex items-center w-full space-x-2 cursor-pointer group appearance-none">
+          <span
+            className={classNames(
+              small ? "w-8 h-8" : "w-10 h-10",
+              "bg-gray-300 rounded-full flex-shrink-0 relative"
+            )}>
+            <img
+              className="rounded-full"
+              src={
+                (process.env.NEXT_PUBLIC_APP_URL || process.env.BASE_URL) +
+                "/" +
+                user?.username +
+                "/avatar.png"
+              }
+              alt={user?.username || "Nameless User"}
+            />
+            {!user?.away && (
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+            )}
+            {user?.away && (
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-yellow-500 border-2 border-white rounded-full"></div>
+            )}
+          </span>
           {!small && (
-            <>
-              <span className="flex-grow text-sm">
-                <span className="block font-medium text-gray-900 truncate">{user.name}</span>
-                <span className="block font-normal truncate text-neutral-500">cal.com/{user.username}</span>
+            <span className="flex items-center flex-grow truncate">
+              <span className="flex-grow text-sm truncate">
+                <span className="block font-medium text-gray-900 truncate">
+                  {user?.username || "Nameless User"}
+                </span>
+                <span className="block font-normal truncate text-neutral-500">
+                  {user?.username ? `cal.com/${user.username}` : "No public page"}
+                </span>
               </span>
               <SelectorIcon
                 className="flex-shrink-0 w-5 h-5 text-gray-400 group-hover:text-gray-500"
                 aria-hidden="true"
               />
-            </>
+            </span>
           )}
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem>
           <a
-            target="_blank"
-            rel="noopener noreferrer"
-            href={`${process.env.NEXT_PUBLIC_APP_URL}/${user?.username || ""}`}
-            className="flex px-4 py-2 text-sm text-gray-700 items-center">
-            <ExternalLinkIcon className="w-5 h-5 mr-3 text-gray-500" /> {t("view_public_page")}
+            onClick={() => {
+              mutation.mutate({ away: !user?.away });
+              utils.invalidateQueries("viewer.me");
+            }}
+            className="flex px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 hover:text-gray-900">
+            <MoonIcon
+              className={classNames(
+                user?.away
+                  ? "text-purple-500 group-hover:text-purple-700"
+                  : "text-gray-500 group-hover:text-gray-700",
+                "mr-2 flex-shrink-0 h-5 w-5"
+              )}
+              aria-hidden="true"
+            />
+            {user?.away ? t("set_as_free") : t("set_as_away")}
           </a>
         </DropdownMenuItem>
+        <DropdownMenuSeparator className="h-px bg-gray-200" />
+        {user?.username && (
+          <DropdownMenuItem>
+            <a
+              target="_blank"
+              rel="noopener noreferrer"
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/${user.username}`}
+              className="flex items-center px-4 py-2 text-sm text-gray-700">
+              <ExternalLinkIcon className="w-5 h-5 mr-3 text-gray-500" /> {t("view_public_page")}
+            </a>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator className="h-px bg-gray-200" />
         <DropdownMenuItem>
           <a
@@ -363,6 +475,15 @@ function UserDropdown({ small }: { small?: boolean }) {
             {t("join_our_slack")}
           </a>
         </DropdownMenuItem>
+        <DropdownMenuItem>
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href="https://cal.com/roadmap"
+            className="flex items-center px-4 py-2 text-sm text-gray-700">
+            <MapIcon className="w-5 h-5 mr-3 text-gray-500" /> {t("visit_roadmap")}
+          </a>
+        </DropdownMenuItem>
         <HelpMenuItemDynamic />
         <DropdownMenuSeparator className="h-px bg-gray-200" />
         <DropdownMenuItem>
@@ -378,5 +499,5 @@ function UserDropdown({ small }: { small?: boolean }) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </Dropdown>
-  ) : null;
+  );
 }

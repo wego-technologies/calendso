@@ -1,5 +1,6 @@
 import { BookOpenIcon, CheckIcon, DesktopComputerIcon, DocumentTextIcon } from "@heroicons/react/outline";
 import { ChevronRightIcon } from "@heroicons/react/solid";
+import { GetStaticPropsContext } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
@@ -7,6 +8,8 @@ import React from "react";
 import { useLocale } from "@lib/hooks/useLocale";
 
 import { HeadSeo } from "@components/seo/head-seo";
+
+import { ssgInit } from "@server/lib/ssg";
 
 export default function Custom404() {
   const { t } = useLocale();
@@ -33,7 +36,7 @@ export default function Custom404() {
     },
   ];
 
-  const isEventType404 = router.asPath.includes("/event-types");
+  const isSubpage = router.asPath.includes("/", 2);
 
   return (
     <>
@@ -100,3 +103,13 @@ export default function Custom404() {
     </>
   );
 }
+
+export const getStaticProps = async (context: GetStaticPropsContext) => {
+  const ssr = await ssgInit(context);
+
+  return {
+    props: {
+      trpcState: ssr.dehydrate(),
+    },
+  };
+};

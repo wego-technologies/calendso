@@ -1,6 +1,7 @@
 import { GetServerSidePropsContext } from "next";
 
 import { asStringOrNull } from "@lib/asStringOrNull";
+import { getWorkingHours } from "@lib/availability";
 import prisma from "@lib/prisma";
 import { inferSSRProps } from "@lib/types/inferSSRProps";
 
@@ -43,6 +44,9 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
               avatar: true,
               username: true,
               timeZone: true,
+              hideBranding: true,
+              plan: true,
+              brandColor: true,
             },
           },
           title: true,
@@ -50,8 +54,16 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
           description: true,
           length: true,
           schedulingType: true,
+          periodType: true,
           periodStartDate: true,
           periodEndDate: true,
+          periodDays: true,
+          periodCountCalendarDays: true,
+          minimumBookingNotice: true,
+          price: true,
+          currency: true,
+          timeZone: true,
+          slotInterval: true,
         },
       },
     },
@@ -65,24 +77,29 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
 
   const [eventType] = team.eventTypes;
 
-  type Availability = typeof eventType["availability"];
-  const getWorkingHours = (availability: Availability) => (availability?.length ? availability : null);
-  const workingHours = getWorkingHours(eventType.availability) || [];
-
-  workingHours.sort((a, b) => a.startTime - b.startTime);
+  const workingHours = getWorkingHours(
+    {
+      timeZone: eventType.timeZone || undefined,
+    },
+    eventType.availability
+  );
 
   const eventTypeObject = Object.assign({}, eventType, {
     periodStartDate: eventType.periodStartDate?.toString() ?? null,
     periodEndDate: eventType.periodEndDate?.toString() ?? null,
   });
 
+  eventTypeObject.availability = [];
+
   return {
     props: {
       profile: {
         name: team.name,
         slug: team.slug,
-        image: team.logo || null,
+        image: team.logo,
         theme: null,
+        weekStart: "Sunday",
+        brandColor: "" /* TODO: Add a way to set a brand color for Teams */,
       },
       date: dateParam,
       eventType: eventTypeObject,
