@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-color: #292929;
+  --brand-text-color: #ffffff;
+}
+
 /* PhoneInput dark-mode overrides (it would add a lot of boilerplate to do this in JavaScript) */
 .PhoneInputInput {
   @apply text-sm border-0 focus:ring-0;
@@ -23,18 +28,6 @@
   /* Makes sure the on-focus behaviour is like Cal.com's */
   @apply rounded-sm focus:ring-primary-500 focus:border-primary-500 h-auto py-0.5 my-0.5;
 }
-
-/* Roboto */
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap");
-
-/* Cal Sans */
-@font-face {
-  font-family: "Cal Sans";
-  src: url("https://cal.com/cal.ttf");
-}
-
-/* Lexend Fallback for Cal Sans*/
-@import url("https://fonts.googleapis.com/css2?family=Lexend:wght@100&display=swap");
 
 /* note(PeerRich): TODO move @layer components into proper React Components: <Button color="primary" size="xs" /> */
 @layer components {
@@ -114,7 +107,7 @@
   }
   /* btn icon */
   .btn-icon {
-    @apply p-2 border border-transparent hover:border-gray-300 cursor-pointer rounded-sm text-neutral-500 hover:text-neutral-900;
+    @apply p-2 border border-transparent rounded-sm cursor-pointer hover:border-gray-300 text-neutral-500 hover:text-neutral-900;
   }
   /* slider */
   .slider {
@@ -182,13 +175,13 @@
 }
 
 .react-multi-email > [type="text"] {
-  @apply block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-900 focus:ring-blue-600 focus:border-blue-600 sm:text-sm;
+  @apply block w-full border-gray-300 rounded-md shadow-sm dark:bg-gray-700 dark:text-white dark:border-gray-900 focus:ring-black focus:border-brand sm:text-sm;
 }
 
 
 .react-multi-email [data-tag] {
   box-shadow: none !important;
-  @apply inline-flex items-center px-2 py-1 my-1 mr-2 text-sm font-medium text-gray-900 border border-transparent rounded-md dark:text-white bg-neutral-200 hover:bg-neutral-100 dark:bg-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500;
+  @apply inline-flex items-center px-2 py-1 my-1 mr-2 text-sm font-medium text-gray-900 border border-transparent rounded-md dark:text-white bg-neutral-200 hover:bg-neutral-100 dark:bg-brand focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500;
 }
 
 .react-multi-email > span[data-placeholder] {
@@ -364,6 +357,10 @@ body {
   background-color: #f3f4f6;
 }
 
+hr {
+  @apply border-gray-200;
+}
+
 .text-white-important {
   color: white !important;
 }
@@ -382,4 +379,9 @@ body {
 .weekdaySelect button.active {
   background: #000;
   color: #fff;
+}
+
+/* react-date-picker forces a border upon us, cast it away */
+.react-date-picker__wrapper {
+  border: none !important;
 }

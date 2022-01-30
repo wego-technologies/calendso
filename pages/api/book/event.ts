@@ -11,26 +11,27 @@ import { v5 as uuidv5 } from "uuid";
 
 import { handlePayment } from "@ee/lib/stripe/server";
 
-import { CalendarEvent, getBusyCalendarTimes } from "@lib/calendarClient";
-import EventOrganizerRequestMail from "@lib/emails/EventOrganizerRequestMail";
+import {
+  sendScheduledEmails,
+  sendRescheduledEmails,
+  sendOrganizerRequestEmail,
+} from "@lib/emails/email-manager";
+import { ensureArray } from "@lib/ensureArray";
 import { getErrorFromUnknown } from "@lib/errors";
 import { getEventName } from "@lib/event";
 import EventManager, { EventResult, PartialReference } from "@lib/events/EventManager";
+import { getBusyCalendarTimes } from "@lib/integrations/calendar/CalendarManager";
+import { CalendarEvent, AdditionInformation } from "@lib/integrations/calendar/interfaces/Calendar";
+import { BufferedBusyTime } from "@lib/integrations/calendar/interfaces/Office365Calendar";
 import logger from "@lib/logger";
+import notEmpty from "@lib/notEmpty";
 import prisma from "@lib/prisma";
 import { BookingCreateBody } from "@lib/types/booking";
 import { getBusyVideoTimes } from "@lib/videoClient";
 import sendPayload from "@lib/webhooks/sendPayload";
-import getSubscriberUrls from "@lib/webhooks/subscriberUrls";
+import getSubscribers from "@lib/webhooks/subscriptions";
 
 import { getTranslation } from "@server/lib/i18n";
-
-export interface DailyReturnType {
-  name: string;
-  url: string;
-  id: string;
-  created_at: string;
-}
 
 dayjs.extend(dayjsBusinessTime);
 dayjs.extend(utc);
@@ -40,7 +41,7 @@ dayjs.extend(timezone);
 const translator = short();
 const log = logger.getChildLogger({ prefix: ["[api] book:user"] });
 
-type BufferedBusyTimes = { start: string; end: string }[];
+type BufferedBusyTimes = BufferedBusyTime[];
 
 /**
  * Refreshes a Credential with fresh data from the database.
@@ -125,11 +126,64 @@ function isOutOfBounds(
   }
 }
 
+const userSelect = Prisma.validator<Prisma.UserArgs>()({
+  select: {
+    id: true,
+    email: true,
+    name: true,
+    username: true,
+    timeZone: true,
+    credentials: true,
+    bufferTime: true,
+    destinationCalendar: true,
+    locale: true,
+  },
+});
+
+const getUserNameWithBookingCounts = async (eventTypeId: number, selectedUserNames: string[]) => {
+  const users = await prisma.user.findMany({
+    where: {
+      username: { in: selectedUserNames },
+      eventTypes: {
+        some: {
+          id: eventTypeId,
+        },
+      },
+    },
+    select: {
+      id: true,
+      username: true,
+      locale: true,
+    },
+  });
+
+  const userNamesWithBookingCounts = await Promise.all(
+    users.map(async (user) => ({
+      username: user.username,
+      bookingCount: await prisma.booking.count({
+        where: {
+          user: {
+            id: user.id,
+          },
+          startTime: {
+            gt: new Date(),
+          },
+          eventTypeId,
+        },
+      }),
+    }))
+  );
+
+  return userNamesWithBookingCounts;
+};
+
+type User = Prisma.UserGetPayload<typeof userSelect>;
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const reqBody = req.body as BookingCreateBody;
   const eventTypeId = reqBody.eventTypeId;
-  const t = await getTranslation(reqBody.language ?? "en", "common");
-
+  const tAttendees = await getTranslation(reqBody.language ?? "en", "common");
+  const tGuests = await getTranslation("en", "common");
   log.debug(`Booking eventType ${eventTypeId} started`);
 
   const isTimeInPast = (time: string): boolean => {
@@ -146,28 +200,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json(error);
   }
 
-  const userSelect = Prisma.validator<Prisma.UserSelect>()({
-    id: true,
-    email: true,
-    name: true,
-    username: true,
-    timeZone: true,
-    credentials: true,
-    bufferTime: true,
-  });
-
-  const userData = Prisma.validator<Prisma.UserArgs>()({
-    select: userSelect,
-  });
-
   const eventType = await prisma.eventType.findUnique({
+    rejectOnNotFound: true,
     where: {
       id: eventTypeId,
     },
     select: {
-      users: {
-        select: userSelect,
-      },
+      users: userSelect,
       team: {
         select: {
           id: true,
@@ -187,6 +226,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId: true,
       price: true,
       currency: true,
+      destinationCalendar: true,
     },
   });
 
@@ -200,84 +240,103 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: {
         id: eventType.userId,
       },
-      select: userSelect,
+      ...userSelect,
     });
     if (!eventTypeUser) return res.status(404).json({ message: "eventTypeUser.notFound" });
     users.push(eventTypeUser);
   }
 
+  const organizer = await prisma.user.findUnique({
+    where: {
+      id: users[0].id,
+    },
+    select: {
+      locale: true,
+    },
+  });
+
+  const tOrganizer = await getTranslation(organizer?.locale ?? "en", "common");
+
   if (eventType.schedulingType === SchedulingType.ROUND_ROBIN) {
-    const selectedUsers = reqBody.users || [];
-    const selectedUsersDataWithBookingsCount = await prisma.user.findMany({
-      where: {
-        username: { in: selectedUsers },
-        bookings: {
-          every: {
-            startTime: {
-              gt: new Date(),
-            },
-          },
-        },
-      },
-      select: {
-        username: true,
-        _count: {
-          select: { bookings: true },
-        },
-      },
-    });
+    const bookingCounts = await getUserNameWithBookingCounts(
+      eventTypeId,
+      ensureArray(reqBody.user) || users.map((user) => user.username)
+    );
 
-    const bookingCounts = selectedUsersDataWithBookingsCount.map((userData) => ({
-      username: userData.username,
-      bookingCount: userData._count?.bookings || 0,
-    }));
-
-    if (!bookingCounts.length) users.slice(0, 1);
-
-    const [firstMostAvailableUser] = bookingCounts.sort((a, b) => (a.bookingCount > b.bookingCount ? 1 : -1));
-    const luckyUser = users.find((user) => user.username === firstMostAvailableUser?.username);
-    users = luckyUser ? [luckyUser] : users;
+    users = getLuckyUsers(users, bookingCounts);
   }
 
-  const invitee = [{ email: reqBody.email, name: reqBody.name, timeZone: reqBody.timeZone }];
-  const guests = reqBody.guests.map((guest) => {
+  const invitee = [
+    {
+      email: reqBody.email,
+      name: reqBody.name,
+      timeZone: reqBody.timeZone,
+      language: { translate: tAttendees, locale: reqBody.language ?? "en" },
+    },
+  ];
+  const guests = (reqBody.guests || []).map((guest) => {
     const g = {
       email: guest,
       name: "",
       timeZone: reqBody.timeZone,
+      language: { translate: tGuests, locale: "en" },
     };
     return g;
   });
 
-  const teamMembers =
+  const teamMemberPromises =
     eventType.schedulingType === SchedulingType.COLLECTIVE
-      ? users.slice(1).map((user) => ({
-          email: user.email || "",
-          name: user.name || "",
-          timeZone: user.timeZone,
-        }))
+      ? users.slice(1).map(async function (user) {
+          return {
+            email: user.email || "",
+            name: user.name || "",
+            timeZone: user.timeZone,
+            language: {
+              translate: await getTranslation(user.locale ?? "en", "common"),
+              locale: user.locale ?? "en",
+            },
+          };
+        })
       : [];
+
+  const teamMembers = await Promise.all(teamMemberPromises);
 
   const attendeesList = [...invitee, ...guests, ...teamMembers];
 
   const seed = `${users[0].username}:${dayjs(req.body.start).utc().format()}:${new Date().getTime()}`;
   const uid = translator.fromUUID(uuidv5(seed, uuidv5.URL));
 
+  const eventNameObject = {
+    attendeeName: reqBody.name || "Nameless",
+    eventType: eventType.title,
+    eventName: eventType.eventName,
+    host: users[0].name || "Nameless",
+    t: tOrganizer,
+  };
+
+  const description =
+    reqBody.notes +
+    reqBody.customInputs.reduce(
+      (str, input) => str + "<br /><br />" + input.label + ":<br />" + input.value,
+      ""
+    );
+
   const evt: CalendarEvent = {
     type: eventType.title,
-    title: getEventName(reqBody.name, eventType.title, eventType.eventName),
-    description: reqBody.notes,
+    title: getEventName(eventNameObject), //this needs to be either forced in english, or fetched for each attendee and organizer separately
+    description,
     startTime: reqBody.start,
     endTime: reqBody.end,
     organizer: {
       name: users[0].name || "Nameless",
       email: users[0].email || "Email-less",
       timeZone: users[0].timeZone,
+      language: { translate: tOrganizer, locale: organizer?.locale ?? "en" },
     },
     attendees: attendeesList,
     location: reqBody.location, // Will be processed by the EventManager later.
-    language: t,
-    uid,
+    /** For team events, we will need to handle each member destinationCalendar eventually */
+    destinationCalendar: eventType.destinationCalendar || users[0].destinationCalendar,
   };
 
   if (eventType.schedulingType === SchedulingType.COLLECTIVE) {
@@ -304,7 +363,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         startTime: dayjs(evt.startTime).toDate(),
         endTime: dayjs(evt.endTime).toDate(),
         description: evt.description,
-        confirmed: !eventType?.requiresConfirmation || !!rescheduleUid,
+        confirmed: (!eventType.requiresConfirmation && !eventType.price) || !!rescheduleUid,
         location: evt.location,
         eventType: {
           connect: {
@@ -313,7 +372,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         attendees: {
           createMany: {
-            data: evt.attendees,
+            data: evt.attendees.map((attendee) => {
+              //if attendee is team member, it should fetch their locale not booker's locale
+              //perhaps make email fetch request to see if his locale is stored, else
+              const retObj = {
+                name: attendee.name,
+                email: attendee.email,
+                timeZone: attendee.timeZone,
+                locale: attendee.language.locale,
+              };
+              return retObj;
+            }),
           },
         },
         user: {
@@ -321,6 +390,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             id: users[0].id,
           },
         },
+        destinationCalendar: evt.destinationCalendar
+          ? {
+              connect: { id: evt.destinationCalendar.id },
+            }
+          : undefined,
       },
     });
   }
@@ -343,9 +417,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   let results: EventResult[] = [];
   let referencesToCreate: PartialReference[] = [];
-  type User = Prisma.UserGetPayload<typeof userData>;
   let user: User | null = null;
 
+  /** Let's start cheking for availability */
   for (const currentUser of users) {
     if (!currentUser) {
       console.error(`currentUser not found`);
@@ -368,8 +442,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         selectedCalendars
       );
 
-      const videoBusyTimes = (await getBusyVideoTimes(credentials)).filter((time) => time);
-      calendarBusyTimes.push(...(videoBusyTimes as any[])); // FIXME add types
+      const videoBusyTimes = (await getBusyVideoTimes(credentials)).filter(notEmpty);
+      calendarBusyTimes.push(...videoBusyTimes);
       console.log("calendarBusyTimes==>>>", calendarBusyTimes);
 
       const bufferedBusyTimes: BufferedBusyTimes = calendarBusyTimes.map((a) => ({
@@ -427,15 +501,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!user) throw Error("Can't continue, user not found.");
 
   // After polling videoBusyTimes, credentials might have been changed due to refreshment, so query them again.
-  const eventManager = new EventManager(await refreshCredentials(user.credentials));
+  const credentials = await refreshCredentials(user.credentials);
+  const eventManager = new EventManager({ ...user, credentials });
 
   if (rescheduleUid) {
     // Use EventManager to conditionally use all needed integrations.
-    const eventManagerCalendarEvent = { ...evt, uid: rescheduleUid };
-    const updateResults = await eventManager.update(eventManagerCalendarEvent);
+    const updateManager = await eventManager.update(evt, rescheduleUid);
 
-    results = updateResults.results;
-    referencesToCreate = updateResults.referencesToCreate;
+    results = updateManager.results;
+    referencesToCreate = updateManager.referencesToCreate;
 
     if (results.length > 0 && results.every((res) => !res.success)) {
       const error = {
@@ -444,15 +518,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       log.error(`Booking ${user.name} failed`, error, results);
+    } else {
+      const metadata: AdditionInformation = {};
+
+      if (results.length) {
+        // TODO: Handle created event metadata more elegantly
+        metadata.hangoutLink = results[0].updatedEvent?.hangoutLink;
+        metadata.conferenceData = results[0].updatedEvent?.conferenceData;
+        metadata.entryPoints = results[0].updatedEvent?.entryPoints;
+      }
+
+      await sendRescheduledEmails({ ...evt, additionInformation: metadata });
     }
     // If it's not a reschedule, doesn't require confirmation and there's no price,
     // Create a booking
   } else if (!eventType.requiresConfirmation && !eventType.price) {
     // Use EventManager to conditionally use all needed integrations.
-    const createResults = await eventManager.create(evt);
+    const createManager = await eventManager.create(evt);
 
-    results = createResults.results;
-    referencesToCreate = createResults.referencesToCreate;
+    results = createManager.results;
+    referencesToCreate = createManager.referencesToCreate;
 
     if (results.length > 0 && results.every((res) => !res.success)) {
       const error = {
@@ -461,11 +546,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       log.error(`Booking ${user.username} failed`, error, results);
+    } else {
+      const metadata: AdditionInformation = {};
+
+      if (results.length) {
+        // TODO: Handle created event metadata more elegantly
+        metadata.hangoutLink = results[0].createdEvent?.hangoutLink;
+        metadata.conferenceData = results[0].createdEvent?.conferenceData;
+        metadata.entryPoints = results[0].createdEvent?.entryPoints;
+      }
+      await sendScheduledEmails({ ...evt, additionInformation: metadata });
     }
   }
 
   if (eventType.requiresConfirmation && !rescheduleUid) {
-    await new EventOrganizerRequestMail({ ...evt, uid }).sendEmail();
+    await sendOrganizerRequestEmail(evt);
   }
 
   if (typeof eventType.price === "number" && eventType.price > 0) {
@@ -487,10 +582,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const eventTrigger = rescheduleUid ? "BOOKING_RESCHEDULED" : "BOOKING_CREATED";
   // Send Webhook call if hooked to BOOKING_CREATED & BOOKING_RESCHEDULED
-  const subscriberUrls = await getSubscriberUrls(user.id, eventTrigger);
-  const promises = subscriberUrls.map((url) =>
-    sendPayload(eventTrigger, new Date().toISOString(), url, evt).catch((e) => {
-      console.error(`Error executing webhook for event: ${eventTrigger}, URL: ${url}`, e);
+  const subscribers = await getSubscribers(user.id, eventTrigger);
+  console.log("evt:", {
+    ...evt,
+    metadata: reqBody.metadata,
+  });
+  const promises = subscribers.map((sub) =>
+    sendPayload(
+      eventTrigger,
+      new Date().toISOString(),
+      sub.subscriberUrl,
+      {
+        ...evt,
+        metadata: reqBody.metadata,
+      },
+      sub.payloadTemplate
+    ).catch((e) => {
+      console.error(`Error executing webhook for event: ${eventTrigger}, URL: ${sub.subscriberUrl}`, e);
     })
   );
   await Promise.all(promises);
@@ -510,4 +618,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // booking successful
   return res.status(201).json(booking);
+}
+
+export function getLuckyUsers(
+  users: User[],
+  bookingCounts: Prisma.PromiseReturnType<typeof getUserNameWithBookingCounts>
+) {
+  if (!bookingCounts.length) users.slice(0, 1);
+
+  const [firstMostAvailableUser] = bookingCounts.sort((a, b) => (a.bookingCount > b.bookingCount ? 1 : -1));
+  const luckyUser = users.find((user) => user.username === firstMostAvailableUser?.username);
+  return luckyUser ? [luckyUser] : users;
 }
