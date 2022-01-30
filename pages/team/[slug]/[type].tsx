@@ -99,7 +99,7 @@ export const getServerSideProps = async (context: GetServerSidePropsContext) => 
         image: team.logo,
         theme: null,
         weekStart: "Sunday",
-        brandColor: "" /* TODO: Add a way to set a brand color for Teams */,
+        brandColor: "#00a1d3" /* TODO: Add a way to set a brand color for Teams */,
       },
       date: dateParam,
       eventType: eventTypeObject,
